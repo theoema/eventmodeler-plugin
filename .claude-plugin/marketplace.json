@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "eventmodeler",
-      "source": "..",
+      "source": "./plugins/eventmodeler",
       "description": "Event modeling assistant - helps explore models, design scenarios, and create read models with field mappings",
       "version": "0.1.0",
       "author": {
