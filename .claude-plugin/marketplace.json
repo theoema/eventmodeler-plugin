@@ -1,0 +1,23 @@
+{
+  "name": "eventmodeler",
+  "owner": {
+    "name": "Theo Emanuelsson"
+  },
+  "metadata": {
+    "description": "Claude Code plugin for event modeling assistance",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "eventmodeler",
+      "source": "..",
+      "description": "Event modeling assistant - helps explore models, design scenarios, and create read models with field mappings",
+      "version": "0.1.0",
+      "author": {
+        "name": "Theo Emanuelsson"
+      },
+      "homepage": "https://www.eventmodeling.app",
+      "keywords": ["event-modeling", "event-sourcing", "cqrs", "ddd"]
+    }
+  ]
+}

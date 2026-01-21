@@ -1,0 +1,9 @@
+{
+  "name": "eventmodeler",
+  "description": "Event modeling assistant - helps design, review, and refine event models",
+  "version": "0.1.0",
+  "author": {
+    "name": "Theo Emanuelsson"
+  },
+  "homepage": "https://www.eventmodeling.app"
+}
