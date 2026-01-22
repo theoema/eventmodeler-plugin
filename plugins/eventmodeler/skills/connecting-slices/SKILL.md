@@ -69,8 +69,12 @@ eventmodeler create state-view-slice --xml '<state-view-slice name="View Order S
   <read-model name="OrderStatus">...</read-model>
 </state-view-slice>'
 
-# System automatically fulfills order
+# System automatically fulfills order (includes its own read model)
 eventmodeler create automation-slice --xml '<automation-slice name="Auto Fulfill" after="View Order Status">
+  <read-model name="OrderReadyToFulfill">
+    <field name="orderId" type="UUID"/>
+    <field name="isPaid" type="Boolean"/>
+  </read-model>
   <processor name="Fulfillment Processor"/>
   <command name="FulfillOrder">...</command>
   <event name="OrderFulfilled">...</event>
@@ -89,16 +93,30 @@ eventmodeler create flow --from "OrderPlaced" --to "OrderStatus"
 eventmodeler create flow --from "OrderFulfilled" --to "OrderStatus"
 ```
 
-### 3. Connect Read Models to Screens/Processors
+### 3. Connect Events to Automation Read Models
 
-Read models provide data to the next action:
+Automation slices have their own internal read model. Connect external events to feed it:
 
 ```bash
-# OrderStatus provides data to the Fulfillment Processor
-eventmodeler create flow --from "OrderStatus" --to "Fulfillment Processor"
+# OrderPlaced feeds the automation's read model
+eventmodeler create flow --from "OrderPlaced" --to "OrderReadyToFulfill"
+
+# PaymentReceived also feeds the automation's read model
+eventmodeler create flow --from "PaymentReceived" --to "OrderReadyToFulfill"
 ```
 
-### 4. Set Up Field Mappings
+Note: The flow from ReadModel → Processor is internal to the automation slice and created automatically.
+
+### 4. Connect Read Models to Screens (for State-View slices)
+
+State-view read models provide data to screens:
+
+```bash
+# OrderStatus provides data to a screen in another slice
+eventmodeler create flow --from "OrderStatus" --to "Order Details Screen"
+```
+
+### 5. Set Up Field Mappings
 
 After creating flows, map the fields. The `--flow` argument uses the source and target names separated by `→`:
 
@@ -111,7 +129,7 @@ eventmodeler map fields --flow "OrderPlaced→OrderStatus" --xml '
 '
 ```
 
-### 5. Verify Completeness
+### 6. Verify Completeness
 
 Check that all flows have proper field mappings:
 
@@ -178,15 +196,16 @@ eventmodeler create flow --from "OrderShipped" --to "OrderSummary"
 eventmodeler create flow --from "OrderDelivered" --to "OrderSummary"
 ```
 
-### Pattern 2: Saga/Process Manager
-A read model triggers automation:
+### Pattern 2: Automation Triggered by Events
+Events feed an automation slice's internal read model:
 
 ```bash
-# Events build up state
+# Events feed the automation's read model (created with create automation-slice)
+eventmodeler create flow --from "OrderPlaced" --to "OrderReadyForShipment"
 eventmodeler create flow --from "PaymentReceived" --to "OrderReadyForShipment"
 
-# State triggers automation
-eventmodeler create flow --from "OrderReadyForShipment" --to "Shipping Processor"
+# The ReadModel → Processor flow is internal to the automation slice
+# (created automatically when you create the automation slice)
 ```
 
 ### Pattern 3: User Dashboard
