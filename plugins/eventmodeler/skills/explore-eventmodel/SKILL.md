@@ -22,6 +22,11 @@ eventmodeler list slices
 Lists all slices with their status (created, in-progress, blocked, done). Slices represent vertical features.
 
 ```bash
+eventmodeler list slices --chapter "<name>"
+```
+Lists only slices within a specific chapter.
+
+```bash
 eventmodeler list chapters
 ```
 Lists chapters - timeline sections that group slices.
@@ -50,9 +55,14 @@ eventmodeler show slice "<name>"
 ```
 Returns XML with:
 - All components in the slice (screens, commands, events, read-models, processors)
+- **Inline flow annotations** on each component showing `<flows-from>` and `<flows-to>` connections
 - Fields on each component with types and attributes
 - Information flow (which components connect to which)
+- **Inbound flows**: External elements flowing INTO this slice (with field mappings)
+- **Outbound flows**: Elements in this slice flowing OUT to other slices (with field mappings)
 - Scenarios (Given-When-Then test cases)
+
+The inbound/outbound flows show cross-slice dependencies - crucial for understanding how a slice integrates with the rest of the system.
 
 **Scenarios are key** - they define the slice's behavior and give it context. A slice's scenarios show:
 - **Given**: What events have already occurred (the starting state)
@@ -104,7 +114,14 @@ Returns XML with the element's fields and connections.
 ```bash
 eventmodeler show chapter "<name>"
 ```
-Shows the chapter and lists all slices within it.
+Shows the chapter with:
+- All slices within the chapter
+- **Flow graph**: How slices connect to each other (which events flow to which read models, etc.) with field mappings
+- **External dependencies**:
+  - Inbound: Flows from outside the chapter into slices within it
+  - Outbound: Flows from slices in this chapter to elements outside it
+
+Use `show chapter` to understand the relationships between slices in a feature area. Use `list slices --chapter` for a simple list without flow details.
 
 ### Show an Actor
 ```bash
