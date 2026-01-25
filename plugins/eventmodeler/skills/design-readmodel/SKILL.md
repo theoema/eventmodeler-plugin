@@ -131,6 +131,42 @@ eventmodeler show model-completeness
 
 This shows a summary of all flows and lists any with unsatisfied fields - useful for finding what still needs work.
 
+## Working with Lists and Custom Types
+
+**List of primitives** - use `isList="true"` with any valid type:
+```bash
+eventmodeler add field --read-model "OrderSummary" --xml '<field name="tags" type="String" isList="true"/>'
+```
+
+**Custom type with nested fields** - use `type="Custom"` with nested `<field>` elements:
+```bash
+eventmodeler add field --read-model "OrderSummary" --xml '<field name="shippingAddress" type="Custom">
+  <field name="street" type="String"/>
+  <field name="city" type="String"/>
+  <field name="postalCode" type="String"/>
+</field>'
+```
+
+**List of custom objects** - combine `type="Custom"` with `isList="true"`:
+```bash
+eventmodeler add field --read-model "OrderSummary" --xml '<field name="lineItems" type="Custom" isList="true">
+  <field name="productId" type="UUID"/>
+  <field name="productName" type="String"/>
+  <field name="quantity" type="Int"/>
+  <field name="unitPrice" type="Decimal"/>
+</field>'
+```
+
+## Common Mistakes
+
+- **Using "List" as a field type**: "List" is not a valid type. Use `isList="true"` with a valid type instead.
+  - Wrong: `<field name="items" type="List"/>`
+  - Right: `<field name="items" type="String" isList="true"/>`
+
+- **Using wrong attribute names**: Always use camelCase attributes.
+  - Wrong: `optional="true"`, `generated="true"`, `list="true"`
+  - Right: `isOptional="true"`, `isGenerated="true"`, `isList="true"`
+
 ## Best Practices
 
 1. **Get approval before adding fields** - Propose the design, let the user confirm

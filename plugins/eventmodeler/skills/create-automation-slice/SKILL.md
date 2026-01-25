@@ -46,8 +46,9 @@ eventmodeler create automation-slice --xml '<automation-slice name="Slice Name" 
 
 ## Field Attributes
 
-- `optional="true"` - Field may not have a value
-- `generated="true"` - System-generated (e.g., computed values, timestamps)
+- `isOptional="true"` - Field may not have a value
+- `isGenerated="true"` - System-generated (e.g., computed values, timestamps)
+- `isList="true"` - Field is a list/array of the specified type
 
 ## Automatic Behavior
 
@@ -72,12 +73,12 @@ eventmodeler create automation-slice --xml '<automation-slice name="Auto Fulfill
   <processor name="Order Fulfillment Processor"/>
   <command name="FulfillOrder">
     <field name="orderId" type="UUID"/>
-    <field name="warehouseId" type="UUID" generated="true"/>
+    <field name="warehouseId" type="UUID" isGenerated="true"/>
   </command>
   <event name="OrderFulfilled">
     <field name="orderId" type="UUID"/>
     <field name="warehouseId" type="UUID"/>
-    <field name="fulfilledAt" type="DateTime" generated="true"/>
+    <field name="fulfilledAt" type="DateTime" isGenerated="true"/>
   </event>
 </automation-slice>'
 ```
@@ -100,7 +101,7 @@ eventmodeler create automation-slice --xml '<automation-slice name="Send Welcome
   <event name="WelcomeEmailSent">
     <field name="userId" type="UUID"/>
     <field name="email" type="String"/>
-    <field name="sentAt" type="DateTime" generated="true"/>
+    <field name="sentAt" type="DateTime" isGenerated="true"/>
   </event>
 </automation-slice>'
 ```
@@ -185,6 +186,42 @@ This outputs:
 - Inbound dependencies (events feeding the read model)
 - Internal flows with field mappings
 - Scenarios with resolved event schemas
+
+## Working with Lists and Custom Types
+
+**List of primitives** - use `isList="true"` with any valid type:
+```xml
+<field name="tags" type="String" isList="true"/>
+<field name="quantities" type="Int" isList="true"/>
+```
+
+**Custom type with nested fields** - use `type="Custom"` with nested `<field>` elements:
+```xml
+<field name="address" type="Custom">
+  <field name="street" type="String"/>
+  <field name="city" type="String"/>
+  <field name="postalCode" type="String"/>
+</field>
+```
+
+**List of custom objects** - combine `type="Custom"` with `isList="true"`:
+```xml
+<field name="lineItems" type="Custom" isList="true">
+  <field name="productId" type="UUID"/>
+  <field name="quantity" type="Int"/>
+  <field name="unitPrice" type="Decimal"/>
+</field>
+```
+
+## Common Mistakes
+
+- **Using "List" as a field type**: "List" is not a valid type. Use `isList="true"` with a valid type instead.
+  - Wrong: `<field name="items" type="List"/>`
+  - Right: `<field name="items" type="String" isList="true"/>`
+
+- **Using wrong attribute names**: Always use camelCase attributes.
+  - Wrong: `optional="true"`, `generated="true"`, `list="true"`
+  - Right: `isOptional="true"`, `isGenerated="true"`, `isList="true"`
 
 ## Best Practices
 

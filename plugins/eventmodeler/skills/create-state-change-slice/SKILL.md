@@ -44,9 +44,10 @@ eventmodeler create state-change-slice --xml '<state-change-slice name="Slice Na
 
 ## Field Attributes
 
-- `optional="true"` - Field may not have a value
-- `generated="true"` - System-generated (e.g., IDs, timestamps), not from user input
-- `user-input="true"` - Entered by the user on the screen
+- `isOptional="true"` - Field may not have a value
+- `isGenerated="true"` - System-generated (e.g., IDs, timestamps), not from user input
+- `isUserInput="true"` - Entered by the user on the screen
+- `isList="true"` - Field is a list/array of the specified type
 
 ## Automatic Behavior
 
@@ -62,8 +63,8 @@ eventmodeler create state-change-slice --xml '<state-change-slice name="Slice Na
 eventmodeler create state-change-slice --xml '<state-change-slice name="Place Order">
   <screen name="Checkout Screen">
     <field name="customerId" type="UUID"/>
-    <field name="items" type="String" user-input="true"/>
-    <field name="shippingAddress" type="String" user-input="true"/>
+    <field name="items" type="String" isUserInput="true"/>
+    <field name="shippingAddress" type="String" isUserInput="true"/>
   </screen>
   <command name="PlaceOrder">
     <field name="customerId" type="UUID"/>
@@ -71,11 +72,11 @@ eventmodeler create state-change-slice --xml '<state-change-slice name="Place Or
     <field name="shippingAddress" type="String"/>
   </command>
   <event name="OrderPlaced">
-    <field name="orderId" type="UUID" generated="true"/>
+    <field name="orderId" type="UUID" isGenerated="true"/>
     <field name="customerId" type="UUID"/>
     <field name="items" type="String"/>
     <field name="shippingAddress" type="String"/>
-    <field name="placedAt" type="DateTime" generated="true"/>
+    <field name="placedAt" type="DateTime" isGenerated="true"/>
   </event>
 </state-change-slice>'
 ```
@@ -120,6 +121,42 @@ After approval, run the command.
 ```bash
 eventmodeler show slice "Place Order"
 ```
+
+## Working with Lists and Custom Types
+
+**List of primitives** - use `isList="true"` with any valid type:
+```xml
+<field name="tags" type="String" isList="true"/>
+<field name="quantities" type="Int" isList="true"/>
+```
+
+**Custom type with nested fields** - use `type="Custom"` with nested `<field>` elements:
+```xml
+<field name="address" type="Custom">
+  <field name="street" type="String"/>
+  <field name="city" type="String"/>
+  <field name="postalCode" type="String"/>
+</field>
+```
+
+**List of custom objects** - combine `type="Custom"` with `isList="true"`:
+```xml
+<field name="lineItems" type="Custom" isList="true">
+  <field name="productId" type="UUID"/>
+  <field name="quantity" type="Int"/>
+  <field name="unitPrice" type="Decimal"/>
+</field>
+```
+
+## Common Mistakes
+
+- **Using "List" as a field type**: "List" is not a valid type. Use `isList="true"` with a valid type instead.
+  - Wrong: `<field name="items" type="List"/>`
+  - Right: `<field name="items" type="String" isList="true"/>`
+
+- **Using wrong attribute names**: Always use camelCase attributes.
+  - Wrong: `optional="true"`, `generated="true"`, `list="true"`, `user-input="true"`
+  - Right: `isOptional="true"`, `isGenerated="true"`, `isList="true"`, `isUserInput="true"`
 
 ## Best Practices
 

@@ -37,7 +37,8 @@ eventmodeler create state-view-slice --xml '<state-view-slice name="Slice Name" 
 
 ## Field Attributes
 
-- `optional="true"` - Field may not always have a value
+- `isOptional="true"` - Field may not always have a value
+- `isList="true"` - Field is a list/array of the specified type
 
 ## Automatic Behavior
 
@@ -133,6 +134,42 @@ eventmodeler map fields --flow "OrderPlaced→OrderSummary" --xml '
 ```bash
 eventmodeler show completeness "OrderSummary"
 ```
+
+## Working with Lists and Custom Types
+
+**List of primitives** - use `isList="true"` with any valid type:
+```xml
+<field name="tags" type="String" isList="true"/>
+<field name="orderIds" type="UUID" isList="true"/>
+```
+
+**Custom type with nested fields** - use `type="Custom"` with nested `<field>` elements:
+```xml
+<field name="address" type="Custom">
+  <field name="street" type="String"/>
+  <field name="city" type="String"/>
+  <field name="postalCode" type="String"/>
+</field>
+```
+
+**List of custom objects** - combine `type="Custom"` with `isList="true"`:
+```xml
+<field name="recentOrders" type="Custom" isList="true">
+  <field name="orderId" type="UUID"/>
+  <field name="total" type="Decimal"/>
+  <field name="placedAt" type="DateTime"/>
+</field>
+```
+
+## Common Mistakes
+
+- **Using "List" as a field type**: "List" is not a valid type. Use `isList="true"` with a valid type instead.
+  - Wrong: `<field name="items" type="List"/>`
+  - Right: `<field name="items" type="String" isList="true"/>`
+
+- **Using wrong attribute names**: Always use camelCase attributes.
+  - Wrong: `optional="true"`, `list="true"`
+  - Right: `isOptional="true"`, `isList="true"`
 
 ## Best Practices
 
