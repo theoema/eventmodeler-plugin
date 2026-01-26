@@ -138,6 +138,10 @@ This shows a summary of all flows and lists any with unsatisfied fields - useful
 eventmodeler add field --read-model "OrderSummary" --xml '<field name="tags" type="String" isList="true"/>'
 ```
 
+### Custom Types (Nested Objects)
+
+**CRITICAL: Custom fields MUST contain subfields.** The `type="Custom"` indicates a nested object structure, and the nested `<field>` elements define its properties. A Custom field without subfields is invalid and creates an empty, useless type.
+
 **Custom type with nested fields** - use `type="Custom"` with nested `<field>` elements:
 ```bash
 eventmodeler add field --read-model "OrderSummary" --xml '<field name="shippingAddress" type="Custom">
@@ -146,6 +150,8 @@ eventmodeler add field --read-model "OrderSummary" --xml '<field name="shippingA
   <field name="postalCode" type="String"/>
 </field>'
 ```
+
+The subfields (`street`, `city`, `postalCode`) define the structure of the `shippingAddress` object. Without these subfields, the custom type has no schema and cannot hold meaningful data.
 
 **List of custom objects** - combine `type="Custom"` with `isList="true"`:
 ```bash
@@ -157,7 +163,33 @@ eventmodeler add field --read-model "OrderSummary" --xml '<field name="lineItems
 </field>'
 ```
 
+This creates a list where each item has the structure defined by the subfields.
+
+**Nested custom types** - subfields can themselves be Custom types:
+```bash
+eventmodeler add field --read-model "OrderSummary" --xml '<field name="customer" type="Custom">
+  <field name="customerId" type="UUID"/>
+  <field name="name" type="String"/>
+  <field name="billingAddress" type="Custom">
+    <field name="street" type="String"/>
+    <field name="city" type="String"/>
+    <field name="country" type="String"/>
+  </field>
+</field>'
+```
+
 ## Common Mistakes
+
+- **Creating empty Custom fields**: Custom fields MUST have subfields that define their structure.
+  - Wrong: `<field name="address" type="Custom"/>` (empty - no structure defined)
+  - Wrong: `<field name="address" type="Custom"></field>` (also empty)
+  - Right:
+    ```xml
+    <field name="address" type="Custom">
+      <field name="street" type="String"/>
+      <field name="city" type="String"/>
+    </field>
+    ```
 
 - **Using "List" as a field type**: "List" is not a valid type. Use `isList="true"` with a valid type instead.
   - Wrong: `<field name="items" type="List"/>`
