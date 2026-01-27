@@ -129,6 +129,29 @@ eventmodeler show actor "<name>"
 ```
 Shows the actor and lists all screens associated with it.
 
+## Managing Slice Status
+
+Slices have a status that tracks their progress: `created`, `in-progress`, `blocked`, `done`.
+
+```bash
+# Mark a slice as in progress
+eventmodeler mark "Place Order" in-progress
+
+# Mark a slice as done
+eventmodeler mark "Place Order" done
+
+# Mark a slice as blocked
+eventmodeler mark "Place Order" blocked
+
+# Reset to created
+eventmodeler mark "Place Order" created
+```
+
+Use `list slices` to see current statuses:
+```bash
+eventmodeler list slices
+```
+
 ## Checking Information Completeness
 
 Information completeness tracks whether fields flow correctly between connected elements.

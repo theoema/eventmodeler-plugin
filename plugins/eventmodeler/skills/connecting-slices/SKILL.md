@@ -118,10 +118,10 @@ eventmodeler create flow --from "OrderStatus" --to "Order Details Screen"
 
 ### 5. Set Up Field Mappings
 
-After creating flows, map the fields. The `--flow` argument uses the source and target names separated by `→`:
+After creating flows, map the fields. See the **map-fields** skill for comprehensive documentation on field mappings.
 
+Quick example:
 ```bash
-# Map fields from OrderPlaced to OrderStatus
 eventmodeler map fields --flow "OrderPlaced→OrderStatus" --xml '
   <mapping from="orderId" to="orderId"/>
   <mapping from="customerId" to="customerId"/>

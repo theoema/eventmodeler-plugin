@@ -61,18 +61,16 @@ eventmodeler add field --read-model "OrderSummary" --xml '<field name="shippingA
 
 ### 5. Map Fields from Events
 
-Once the read model has fields, map them from the source events:
+Once the read model has fields, map them from the source events. See the **map-fields** skill for comprehensive documentation on field mappings.
 
+Quick example:
 ```bash
-# Map fields on a flow
 eventmodeler map fields --flow "OrderPlaced→OrderSummary" --xml '
   <mapping from="orderId" to="orderId"/>
   <mapping from="customerId" to="customerId"/>
   <mapping from="totalAmount" to="total"/>
 '
 ```
-
-You can map multiple fields at once. Field names are matched by name or path (for nested fields).
 
 ### 6. Verify Completeness
 
