@@ -161,7 +161,16 @@ ${mappings}
 
 ### 5. Generate Tests from Scenarios
 
-Scenarios are BDD specs that become tests:
+Scenarios are BDD specs that become tests. There are two scenario patterns:
+
+**State-Change Scenarios** (whenCommand → then events/error):
+- `whenCommand`: The command being tested
+- `then.type: 'events'`: Expected events produced
+- `then.type: 'error'`: Expected error
+
+**Automation Scenarios** (whenEvents → then command):
+- `whenEvents`: The event(s) that trigger the processor
+- `then.type: 'command'`: The command the processor should issue
 
 ```typescript
 function generateTests(input: CodegenInput): string {
@@ -170,9 +179,17 @@ function generateTests(input: CodegenInput): string {
       .map(g => `    await given(new ${g.eventName}(${JSON.stringify(g.fieldValues)}));`)
       .join('\n');
 
-    const whenAction = scenario.when
-      ? `    await when(new ${scenario.when.commandName}(${JSON.stringify(scenario.when.fieldValues)}));`
-      : '';
+    // State-change scenarios: when is a command
+    let whenAction = '';
+    if (scenario.whenCommand) {
+      whenAction = `    await when(new ${scenario.whenCommand.commandName}(${JSON.stringify(scenario.whenCommand.fieldValues)}));`;
+    }
+    // Automation scenarios: when is event(s)
+    if (scenario.whenEvents?.length > 0) {
+      whenAction = scenario.whenEvents
+        .map(e => `    await whenEvent(new ${e.eventName}(${JSON.stringify(e.fieldValues)}));`)
+        .join('\n');
+    }
 
     let thenAssertion: string;
     if (scenario.then.type === 'events') {
@@ -180,6 +197,10 @@ function generateTests(input: CodegenInput): string {
         .map(e => `new ${e.eventName}(${JSON.stringify(e.fieldValues)})`)
         .join(', ');
       thenAssertion = `    await thenExpect([${expected}]);`;
+    } else if (scenario.then.type === 'command') {
+      // Automation scenario: expect a command to be issued
+      const cmd = scenario.then.expectedCommand!;
+      thenAssertion = `    await thenExpectCommand(new ${cmd.commandName}(${JSON.stringify(cmd.fieldValues)}));`;
     } else if (scenario.then.type === 'error') {
       thenAssertion = `    await thenExpectError('${scenario.then.errorType}', '${scenario.then.errorMessage}');`;
     } else {
