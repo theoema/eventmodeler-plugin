@@ -5,10 +5,10 @@ description: Help design and add scenarios (Given-When-Then specifications) to s
 
 # Designing Scenarios for Slices
 
-Scenarios define the behavior of a slice using Given-When-Then format. There are two main scenario patterns:
+Scenarios define the behavior of a slice. There are two main scenario patterns:
 
 1. **State-Change Scenarios** (for state-change slices): Given events → When command → Then events/error
-2. **Automation Scenarios** (for automation slices): Given events → When events → Then command
+2. **Automation Scenarios** (for automation slices): Given events → Then command (simpler Given-Then format)
 
 ## Your Workflow
 
@@ -32,12 +32,13 @@ eventmodeler list events
 **State-Change Slice** (Screen → Command → Event):
 - User triggers a command
 - Command produces event(s)
-- Use: When command → Then events/error
+- Use: Given → When command → Then events/error
 
 **Automation Slice** (ReadModel → Processor → Command → Event):
-- Events trigger the processor
-- Processor issues a command
-- Use: When events → Then command
+- Events trigger the processor to issue a command
+- Use simpler Given → Then format (no When)
+- Given: All events that lead to the trigger condition
+- Then: The command that should be dispatched (or noCommand)
 
 ### 3. Design Scenarios by Type
 
@@ -125,35 +126,32 @@ eventmodeler add scenario --slice "Cancel Order" --xml '<scenario name="Cannot c
 
 ## Automation Scenarios
 
-For slices where events trigger a processor to issue a command:
+For slices where events trigger a processor to issue a command. Use the simpler **Given-Then** format:
 
 **Trigger Conditions Met** - Events cause processor to act
-- Given: Any background state needed
-- When: The event(s) that trigger the processor
+- Given: All the events that have occurred (including the trigger events)
 - Then: The command the processor issues
 
-**Trigger Conditions Not Met** - Events don't cause action (optional)
-- Given: State that prevents action
-- When: The trigger event(s)
-- Then: No command (or specific behavior)
+**Trigger Conditions Not Met** - Events don't cause action
+- Given: Events that don't meet the trigger condition
+- Then: noCommand (processor should not dispatch)
 
 ### Automation Examples
 
 ```bash
 # Payment received triggers shipment initiation
-eventmodeler add scenario --slice "Auto Ship Order" --xml '<scenario name="Payment triggers shipment" description="When payment is received for a placed order, the system automatically initiates shipment">
+# Given: OrderPlaced + PaymentReceived → Then: InitiateShipment command
+eventmodeler add scenario --slice "Auto Ship Order" --xml '<scenario name="Payment triggers shipment" description="Given an order has been placed and payment received, the system automatically initiates shipment">
   <given>
     <event name="OrderPlaced">
       <field name="orderId">order-123</field>
       <field name="customerId">cust-456</field>
     </event>
-  </given>
-  <when>
     <event name="PaymentReceived">
       <field name="orderId">order-123</field>
       <field name="amount">99.99</field>
     </event>
-  </when>
+  </given>
   <then type="command">
     <command name="InitiateShipment">
       <field name="orderId">order-123</field>
@@ -164,15 +162,13 @@ eventmodeler add scenario --slice "Auto Ship Order" --xml '<scenario name="Payme
 ```
 
 ```bash
-# Multiple events trigger automation
-eventmodeler add scenario --slice "Send Order Confirmation" --xml '<scenario name="Order and payment trigger confirmation email" description="When order is placed and payment is received, send confirmation email">
+# Multiple events from different contexts trigger automation
+eventmodeler add scenario --slice "Send Order Confirmation" --xml '<scenario name="Order and payment trigger confirmation email" description="Given a customer is registered, order placed, and payment received, send confirmation email">
   <given>
     <event name="CustomerRegistered">
       <field name="customerId">cust-123</field>
       <field name="email">customer@example.com</field>
     </event>
-  </given>
-  <when>
     <event name="OrderPlaced">
       <field name="orderId">order-456</field>
       <field name="customerId">cust-123</field>
@@ -181,13 +177,26 @@ eventmodeler add scenario --slice "Send Order Confirmation" --xml '<scenario nam
       <field name="orderId">order-456</field>
       <field name="amount">150.00</field>
     </event>
-  </when>
+  </given>
   <then type="command">
     <command name="SendOrderConfirmation">
       <field name="orderId">order-456</field>
       <field name="email">customer@example.com</field>
     </command>
   </then>
+</scenario>'
+```
+
+```bash
+# Negative case - conditions not met, no command dispatched
+eventmodeler add scenario --slice "Auto Ship Order" --xml '<scenario name="No shipment without payment" description="Given only an order placed (no payment), the system should not initiate shipment">
+  <given>
+    <event name="OrderPlaced">
+      <field name="orderId">order-123</field>
+      <field name="customerId">cust-456</field>
+    </event>
+  </given>
+  <then type="noCommand"/>
 </scenario>'
 ```
 
@@ -212,11 +221,11 @@ eventmodeler add scenario --slice "<slice-name>" --xml '<scenario name="Order ap
 
 ## Scenario Types Summary
 
-| Slice Type | When Contains | Then Contains |
-|------------|---------------|---------------|
-| State-Change | Command | Events or Error |
-| Automation | Event(s) | Command |
-| State-View | (none) | Read Model Assertion |
+| Slice Type | Format | Then Contains |
+|------------|--------|---------------|
+| State-Change | Given → When (Command) → Then | Events or Error |
+| Automation | Given (Events) → Then | Command or noCommand |
+| State-View | Given → Then | Read Model Assertion |
 
 ## JSON Format Alternative
 
@@ -243,23 +252,33 @@ eventmodeler add scenario --slice "<slice-name>" --json '{
 }'
 ```
 
-**Automation Scenario:**
+**Automation Scenario (Given-Then format):**
 ```bash
 eventmodeler add scenario --slice "<slice-name>" --json '{
   "name": "Payment triggers shipment",
-  "description": "When payment is received, shipment is initiated",
+  "description": "Given order placed and payment received, shipment is initiated",
   "given": [
-    { "event": "OrderPlaced", "fieldValues": { "orderId": "order-123" } }
+    { "event": "OrderPlaced", "fieldValues": { "orderId": "order-123" } },
+    { "event": "PaymentReceived", "fieldValues": { "orderId": "order-123", "amount": 99.99 } }
   ],
-  "when": {
-    "events": [
-      { "event": "PaymentReceived", "fieldValues": { "orderId": "order-123", "amount": 99.99 } }
-    ]
-  },
   "then": {
     "type": "command",
     "command": "InitiateShipment",
     "commandFieldValues": { "orderId": "order-123" }
+  }
+}'
+```
+
+**Automation Scenario (negative case):**
+```bash
+eventmodeler add scenario --slice "<slice-name>" --json '{
+  "name": "No shipment without payment",
+  "description": "Given only order placed (no payment), no command dispatched",
+  "given": [
+    { "event": "OrderPlaced", "fieldValues": { "orderId": "order-123" } }
+  ],
+  "then": {
+    "type": "noCommand"
   }
 }'
 ```
@@ -271,5 +290,5 @@ eventmodeler add scenario --slice "<slice-name>" --json '{
 3. **Name scenarios descriptively** - "Cannot cancel shipped order" not "Error case 1"
 4. **Include all relevant fields** - Don't skip fields that matter for the scenario
 5. **Think about state** - What events need to exist for this scenario to make sense?
-6. **Cover the negative cases** - These often reveal missing business rules
-7. **Match scenario type to slice type** - Use When command for state-change, When events for automation
+6. **Cover the negative cases** - These often reveal missing business rules (use `noCommand` for automations)
+7. **Match format to slice type** - Use Given-When-Then for state-change, Given-Then for automation
