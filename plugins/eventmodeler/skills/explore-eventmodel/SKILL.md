@@ -36,9 +36,15 @@ Lists chapters - timeline sections that group slices.
 ```bash
 eventmodeler list events      # All events in the model
 eventmodeler list commands    # All commands in the model
+eventmodeler list readmodels  # All read models
+eventmodeler list screens     # All screens
+eventmodeler list processors  # All processors
+eventmodeler list scenarios   # All scenarios
 eventmodeler list aggregates  # All aggregates (event groupings)
 eventmodeler list actors      # All actors (user/system roles)
 ```
+
+All `list` commands support `--format xml|json`.
 
 ## Searching
 
@@ -109,6 +115,25 @@ eventmodeler show event "<name>"
 eventmodeler show command "<name>"
 ```
 Returns XML with the element's fields and connections.
+
+### Show Read Models, Screens, and Processors
+```bash
+eventmodeler show readmodel "<name>"
+eventmodeler show screen "<name>"
+eventmodeler show processor "<name>"
+```
+Use these for detailed flow context:
+- `show readmodel`: fields, source events, and who consumes it
+- `show screen`: fields, source read models, and triggered commands
+- `show processor`: fields, source read models, and triggered commands
+
+### Show Aggregate and Scenario
+```bash
+eventmodeler show aggregate "<name>"
+eventmodeler show scenario "<name>"
+```
+- `show aggregate`: aggregate ID configuration and contained events
+- `show scenario`: complete Given-When-Then with field values
 
 ### Show a Chapter
 ```bash
@@ -212,5 +237,7 @@ When checking model health:
 When looking for something specific:
 - Know the feature name? → `show slice`
 - Know an event name? → `show event` or `search`
+- Know a read model/screen/processor name? → `show readmodel` / `show screen` / `show processor`
+- Need scenario details? → `list scenarios` then `show scenario`
 - Want all events? → `list events`
 - Checking data flow? → `show completeness` or `show model-completeness`

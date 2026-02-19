@@ -5,12 +5,22 @@ description: Build code generators that consume eventmodeler codegen output. Use
 
 # Building Code Generators for Event Models
 
-The `eventmodeler codegen slice` command outputs structured JSON that code generators can consume. This skill teaches how to build code generators that transform event model slices into working code.
+The `eventmodeler codegen` commands output structured JSON that code generators can consume:
+- `eventmodeler codegen slice "<slice-name>"` for per-slice generation
+- `eventmodeler codegen events [--chapter "<chapter-name>"]` for deduplicated event scaffolding across slices
 
 ## The Codegen Pipeline
 
+Per-slice pipeline:
+
 ```
 eventmodeler codegen slice "Place Order" | your-generator > output-files
+```
+
+Events-only pipeline:
+
+```
+eventmodeler codegen events --chapter "Register Products" | your-events-generator > events.kt
 ```
 
 Your generator receives JSON on stdin and produces code files.
@@ -36,6 +46,30 @@ eventmodeler codegen slice "Place Order"
   "scenarios": [ ... ]
 }
 ```
+
+### Events-Only Structure (`codegen events`)
+
+```json
+{
+  "chapter": { "name": "Register Products", "parent": { "name": "Configuration" } },
+  "sliceCount": 4,
+  "eventCount": 9,
+  "slices": [
+    { "id": "...", "name": "Place Product", "sliceType": "STATE_CHANGE" }
+  ],
+  "events": [
+    {
+      "id": "...",
+      "name": "ProductRegistered",
+      "fields": [ ... ],
+      "aggregate": "Product",
+      "sourceSlices": ["Place Product", "Import Product"]
+    }
+  ]
+}
+```
+
+Use `codegen events` when generating shared event artifacts in one pass (for a chapter or entire model).
 
 ### Slice Types and What to Generate
 
@@ -321,12 +355,18 @@ main();
 eventmodeler codegen slice "Place Order" | node generator.js
 
 # All slices (bash loop)
-for slice in $(eventmodeler list slices --format names); do
+for slice in $(eventmodeler list slices --format json | node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync(0,"utf8"));for(const s of (d.slices||[])) console.log(s.name)'); do
   eventmodeler codegen slice "$slice" | node generator.js
 done
 
 # Pipe to file writer
 eventmodeler codegen slice "Place Order" | node generator.js | write-files.sh
+
+# Chapter-scoped events scaffolding
+eventmodeler codegen events --chapter "Register Products" | node generate-events.js
+
+# Whole-model events scaffolding
+eventmodeler codegen events | node generate-events.js
 ```
 
 ## Best Practices
