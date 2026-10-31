@@ -1,62 +1,40 @@
-# Event Modeler Claude Plugin
+# EventModeler plugin
 
-A Claude Code plugin that helps with event modeling - designing slices, writing scenarios, and creating read models with field mappings.
+Event modeling for coding agents. Installing the plugin gives your agent:
 
-## Installation
+- **The method as skills.** There are 19 `eventmodeling-*` skills, from brainstorming events to validating a finished model. Your harness lists them and loads the right one when a task calls for it.
+- **The EventModeler MCP server** (`https://api.eventmodeler.com/mcp`). The agent reads and edits your models through it, live, alongside you. The first time you use it, the harness asks you to sign in to EventModeler.
 
-```bash
-# Add the marketplace
-/plugin marketplace add theoema/eventmodeler-claude-plugin
+If you already added the EventModeler MCP server by hand, remove that entry after you install the plugin. Otherwise your agent sees every tool twice.
 
-# Install the plugin
-/plugin install eventmodeler@eventmodeler
-```
+## Install
 
-## Skills
+| Harness | Install |
+|---|---|
+| Claude Code | `/plugin marketplace add theoema/eventmodeler-plugin`, then `/plugin install eventmodeler@eventmodeler` |
+| Codex | `codex plugin marketplace add theoema/eventmodeler-plugin`, then `codex plugin add eventmodeler@eventmodeler` |
+| GitHub Copilot CLI | `copilot plugin marketplace add theoema/eventmodeler-plugin`, then `copilot plugin install eventmodeler@eventmodeler` |
+| VS Code (agent mode) | Run **Chat: Install Plugin from Source** and enter `https://github.com/theoema/eventmodeler-plugin` |
+| Cursor | Clone this repository into `~/.cursor/plugins/local/eventmodeler` |
+| Gemini CLI | `gemini extensions install https://github.com/theoema/eventmodeler-plugin --auto-update` |
+| Factory Droid | `droid plugin marketplace add theoema/eventmodeler-plugin`, then `droid plugin install eventmodeler@eventmodeler --scope user` |
+| Devin / Windsurf | `devin plugins install theoema/eventmodeler-plugin` |
 
-### explore-eventmodel
-Navigate and query event models using the `eventmodeler` CLI. Helps you:
-- Get an overview of the model (slices, chapters, events, commands)
-- Search for specific elements
-- Check information completeness
-- Understand slice structure and scenarios
+Other harnesses that read Agent Skills (OpenCode, Amp, Kiro, Antigravity and others) can use the plugin too:
 
-### design-scenarios
-Design Given-When-Then scenarios for slices. Helps you:
-- Understand slice context by exploring nearby slices and events
-- Design happy path, error, and edge case scenarios
-- Add scenarios with realistic example field values and descriptions
+1. Copy `skills/` into the harness's skills directory (often `.agents/skills`).
+2. Add `https://api.eventmodeler.com/mcp` as a remote MCP server.
 
-### design-readmodel
-Design read models with fields and mappings. Helps you:
-- Propose fields based on use case
-- Add fields with appropriate types
-- Map fields from source events
-- Verify completeness
+## Updating
 
-## Requirements
+| Harness | How updates arrive |
+|---|---|
+| Claude Code | Follows this repository's latest commit. Turn on auto-update for the marketplace under `/plugin` → Marketplaces, or run `/plugin marketplace update`. |
+| Codex | Run `codex plugin marketplace upgrade`. |
+| Gemini CLI | Updates itself if you installed with `--auto-update`. |
 
-This plugin works with the [Event Modeler](https://github.com/theoema/event-modeler) tool. You need the `eventmodeler` CLI available in your project.
+## Using it
 
-## Usage
+Ask for what you want modeled, for example "model the checkout of a web shop" or "add a refund slice to the Orders model". The agent loads `eventmodeling-core-rules` and the skill for the step, reads the model, builds it cell by cell and runs `check_model` before it calls the work done.
 
-Once installed, the skills auto-invoke when relevant. You can also invoke them directly:
-
-```
-/eventmodeler:explore-eventmodel
-/eventmodeler:design-scenarios
-/eventmodeler:design-readmodel
-```
-
-Or just ask naturally:
-- "Show me the slices in this model"
-- "Help me add a scenario to the Place Order slice"
-- "I want to design a read model for order history"
-
-## Author
-
-Theo Emanuelsson
-
-## License
-
-MIT
+This repository is generated from the EventModeler monorepo. Don't edit it here.

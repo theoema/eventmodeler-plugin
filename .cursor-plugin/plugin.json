@@ -1,0 +1,20 @@
+{
+  "name": "eventmodeler",
+  "version": "0.1.0",
+  "description": "Event modeling with EventModeler: the method as skills, and the EventModeler MCP server to build models with.",
+  "author": {
+    "name": "EventModeler",
+    "url": "https://eventmodeler.com"
+  },
+  "homepage": "https://eventmodeler.com",
+  "repository": "https://github.com/theoema/eventmodeler-plugin",
+  "license": "CC-BY-NC-4.0",
+  "keywords": [
+    "event-modeling",
+    "event-sourcing",
+    "domain-modeling",
+    "eventmodeler"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

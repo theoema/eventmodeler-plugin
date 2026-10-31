@@ -1,23 +1,15 @@
 {
   "name": "eventmodeler",
   "owner": {
-    "name": "Theo Emanuelsson"
+    "name": "EventModeler",
+    "url": "https://eventmodeler.com"
   },
-  "metadata": {
-    "description": "Claude Code plugin for event modeling assistance",
-    "version": "0.1.0"
-  },
+  "description": "Event modeling with EventModeler: the method as skills, and the EventModeler MCP server to build models with.",
   "plugins": [
     {
       "name": "eventmodeler",
-      "source": "./plugins/eventmodeler",
-      "description": "Event modeling assistant - helps explore models, design scenarios, and create read models with field mappings",
-      "version": "0.1.0",
-      "author": {
-        "name": "Theo Emanuelsson"
-      },
-      "homepage": "https://www.eventmodeling.app",
-      "keywords": ["event-modeling", "event-sourcing", "cqrs", "ddd"]
+      "source": "./",
+      "description": "Event modeling with EventModeler: the method as skills, and the EventModeler MCP server to build models with."
     }
   ]
 }

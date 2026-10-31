@@ -1,0 +1,20 @@
+{
+  "name": "eventmodeler",
+  "interface": {
+    "displayName": "EventModeler"
+  },
+  "plugins": [
+    {
+      "name": "eventmodeler",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
