@@ -97,7 +97,7 @@ Apply `eventmodeling-information-completeness` to every COMMAND field and every 
 
 Lineage lives in the flows between elements, not on the field. A field named the same as a field on the element upstream of it needs nothing: once the flow exists, the same name *is* the mapping. A field that was renamed along the way is declared with `set_flow_mapping` (by field name, on the flow between the two elements). `check_model` reports every required field that no inbound flow supplies as `untraceable-field`.
 
-The stored field shape is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, example?}`. Any other key is silently dropped. Set `"isList": true` only when the field genuinely holds a list of values (e.g. multi-select); omit it otherwise. Only add fields the command actually needs to do its job. Do not add speculative fields; enrich later with `update_element` (passing `fields` replaces the list: resend every field, and unchanged names keep their ids, so flow mappings survive).
+The stored field shape is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?}`. Any other key is silently dropped. Set `"isList": true` only when the field genuinely holds a list of values (e.g. multi-select); omit it otherwise. Only add fields the command actually needs to do its job. Do not add speculative fields; enrich later with `update_element` (passing `fields` replaces the list: resend every field, and unchanged names keep their ids, so flow mappings survive).
 
 ### Field traceability rule for events
 

@@ -59,7 +59,7 @@ It returns a flat `findings` list (errors first; each with a stable `check` code
 | Direction and layout | `flow-backward`, `column-multiple-events`, `sheet-starts-with-command`, `state-change-without-trigger`, `external-event-direct` |
 | Read models | `read-model-without-source`, `read-model-unconsumed` |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` |
-| Field sources | `untraceable-field`, `unsourced-fields` |
+| Field sources | `untraceable-field`, `unsourced-fields`, `pii-mismatch` |
 | Scenarios | `slice-without-scenario`, `no-error-scenario`, `scenario-missing-ref`, `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy` |
 | Slices | `empty-slice`, `slice-mixed-shape` |
 | Candidates, worth a look rather than violations | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (info) |

@@ -96,12 +96,13 @@ One cell holds one element. To fit a second element on the same lane in the same
 
 ### Field shape
 
-Exactly `{ name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, example?, subfields? }`. `fieldType` is one of `UUID`, `Boolean`, `Double`, `Decimal`, `Date`, `DateTime`, `Long`, `Int`, `String`, `Custom` (a `Custom` field has `subfields`). Unknown keys are dropped **silently**, so a made-up property looks accepted and does nothing.
+Exactly `{ name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?, subfields? }`. `fieldType` is one of `UUID`, `Boolean`, `Double`, `Decimal`, `Date`, `DateTime`, `Long`, `Int`, `String`, `Custom` (a `Custom` field has `subfields`). Unknown keys are dropped **silently**, so a made-up property looks accepted and does nothing.
 
 - `isList`: this field holds several values.
 - `isGenerated`: the information starts here (minted or computed at this element).
 - `isUserInput`: the information starts here because a person types it into a screen.
 - `isOptional`: may be absent.
+- `isPii`: the value identifies or describes a person (name, email, address, phone). It belongs to the value, not the element: mark it on every element the value passes through.
 - `example`: an illustrative value, a string. On a `Custom` field put examples on its subfields.
 
 ### Field lineage
@@ -170,7 +171,7 @@ Use a note for something decided or observed. Use a pin for something that needs
 | Direction and layout | `flow-backward` (error; the closing event into a todo-list read model is exempt), `column-multiple-events` (error), `sheet-starts-with-command` (warning), `state-change-without-trigger` (warning), `external-event-direct` (warning) |
 | Slices | `slice-mixed-shape` (error), `empty-slice` (info) |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` (warnings) |
-| Field sources | `untraceable-field` (warning), `unsourced-fields` (info) |
+| Field sources | `untraceable-field` (warning), `unsourced-fields` (info), `pii-mismatch` (warning: a flow carries a value from a PII-marked field into an unmarked one, or the reverse) |
 | Scenarios | `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy` (warnings), `slice-without-scenario`, `no-error-scenario` (info), `scenario-missing-ref` (error) |
 | Candidates, worth a look | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (info) |
 

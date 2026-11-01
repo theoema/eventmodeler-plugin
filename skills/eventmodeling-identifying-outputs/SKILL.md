@@ -224,7 +224,7 @@ If the READMODEL itself represents a set of rows rather than a single record —
 }
 ```
 
-The field shape is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, example?}` (plus `subfields` for a Custom field) — anything else is silently dropped. Field types: `UUID, Boolean, Double, Decimal, Date, DateTime, Long, Int, String, Custom`.
+The field shape is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?}` (plus `subfields` for a Custom field) — anything else is silently dropped. Field types: `UUID, Boolean, Double, Decimal, Date, DateTime, Long, Int, String, Custom`.
 
 Read models go in the **interaction** lane. For a **SCREEN**, the primary read model shares the SCREEN's column (READMODEL in the interaction lane, SCREEN in the actor lane of the same column) — unless that column's interaction-lane cell is already occupied (e.g. a command/input screen, where the COMMAND already sits there), in which case the read model goes one column to the left instead. For an **AUTOMATION**, the read model always goes one column to the left, never the same column — an automation's own column already holds the COMMAND it issues. If a consumer needs more than one read model, only the primary one gets this placement; every additional read model goes further left still.
 

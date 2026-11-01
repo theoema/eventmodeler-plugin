@@ -114,7 +114,7 @@ The result is a `{ roleName: row number }` map, covering human roles only, used 
 
 Apply `eventmodeling-information-completeness` to every screen field as you add it. In short: input the user enters is `isUserInput: true`; session values and display-only calculations are `isGenerated: true`. Displayed data comes from the read model it is shown from, even when that read model isn't designed yet, which Step 5 then groups by. A screen field never maps to the command it submits.
 
-A field is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, example?}`. Any other key is silently dropped. Lineage between elements is not stored on the field: it lives in flows. Once the read model is on the sheet and flows into the screen, a same-named field needs nothing; a differently named one is declared with `source: { from, field }` on the field when you write it, or with `set_flow_mapping` afterwards.
+A field is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?}`. Any other key is silently dropped. Lineage between elements is not stored on the field: it lives in flows. Once the read model is on the sheet and flows into the screen, a same-named field needs nothing; a differently named one is declared with `source: { from, field }` on the field when you write it, or with `set_flow_mapping` afterwards.
 
 ### Example: command screen fields
 

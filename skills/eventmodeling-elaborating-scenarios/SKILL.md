@@ -384,15 +384,15 @@ place_element { cell: "<specification cell>", element: { scope: "scenarios", nam
 set_scenario  { scenario: "<that name or the returned address>", given: [...], when: [...], then: [...], description?: "..." }
 ```
 
-A step is an element reference (address or name) or `{ element, fieldValues: { fieldName: value } }` to carry the example values. Provided sections replace that section wholesale; omitted sections are untouched. Place a scenario and fill it in one go by sending both calls in one `apply_operations` batch (by the scenario's unique name), and group all the scenarios of one command or view the same way. `position` orders the card among its slice's scenarios.
+A step is an element reference (address or name) or `{ element, fieldValues: { fieldName: value } }` to carry the example values. For a state-view scenario whose `when` needs to represent a query rather than a COMMAND, `when` may hold a single inline object that is **not** an element on the sheet: `{ "query": "...", "fieldValues": { "<name>": "<example>" } }`. Provided sections replace that section wholesale; omitted sections are untouched. Place a scenario and fill it in one go by sending both calls in one `apply_operations` batch (by the scenario's unique name), and group all the scenarios of one command or view the same way. `position` orders the card among its slice's scenarios.
 
 **Rules for the steps (the method — keep to them even where a call would accept more):**
 - `given`: prior EVENTs. Where the case depends on what a read model was showing, that read model's state goes in `given` too (the context).
-- `when`: at most one COMMAND; empty when `then` is a READMODEL.
+- `when`: at most one COMMAND or QUERY; empty or a QUERY when `then` is a READMODEL.
 - `then`: EVENTs only OR exactly one READMODEL — never mixed.
 - A step names its element where it lives, on whichever sheet: never a linked copy placed for the step.
 
-`set_scenario` itself only checks that each entry is an element of an allowed kind for its section; it does not enforce these tighter rules, so keep to them yourself. `check_model` reports `scenario-when-shape` where a `when` holds more than one entry, an event, or anything beside a read-model `then`, and `scenario-then-shape` where a `then` mixes a read model with other entries, names several read models, puts an error beside other entries, or holds a command.
+`set_scenario` itself only checks that each entry is an element of an allowed kind for its section; it does not enforce these tighter rules, so keep to them yourself. `check_model` reports `scenario-when-shape` where a `when` holds more than one entry or an event, where a command sits beside a read-model `then`, or where a query is followed by events, and `scenario-then-shape` where a `then` mixes a read model with other entries, names several read models, puts an error beside other entries, or holds a command.
 
 ### Step 4b — List-type read model scenarios
 
