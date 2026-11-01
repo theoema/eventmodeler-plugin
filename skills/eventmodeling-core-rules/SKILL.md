@@ -148,6 +148,7 @@ All of a model's sheets sit on one canvas, and people read it like a map, so lay
 - Top to bottom is story order: each sheet goes `below` the one whose story comes before it. Creating sheets in story order gets this for free.
 - Side by side (`rightOf`) is for journeys that run as alternatives: the divergent journeys one choice leads to sit next to each other.
 - `get_model_view` shows each sheet's neighbours in `layout`. `check_model` reports `sheets-overlap` (a warning) when two sheets lie on top of each other; fix it with `move_sheet` before calling the work done.
+- Sheets that belong to one bounded context (or one team's area) can be grouped in a named box with `set_context`. A box follows the sheets you name, never coordinates, and doesn't move when they do: after `move_sheet`, re-fit it with `set_context` and the same `context`.
 
 ## Connecting Sheets
 

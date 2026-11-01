@@ -104,7 +104,7 @@ Every event goes into a column on the sheet's event lane (see Cell Placement). N
 
 When placing an EVENT, you **must** include the event's key fields. An event without fields is an opaque label. It cannot be used to validate completeness or write scenarios.
 
-A field is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?}`. Any other key is silently dropped. `fieldType` is one of `UUID`, `Boolean`, `Double`, `Decimal`, `Date`, `DateTime`, `Long`, `Int`, `String`, `Custom` (a `Custom` field nests `subfields`, and its examples go on the subfields). `example` is one illustrative value, always a string.
+A field is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?}`. Any other key is refused, and the call changes nothing. `fieldType` is one of `UUID`, `Boolean`, `Double`, `Decimal`, `Date`, `DateTime`, `Long`, `Int`, `String`, `Custom` (a `Custom` field nests `subfields`, and its examples go on the subfields). `example` is one illustrative value, always a string.
 
 ```json
 {

@@ -82,7 +82,8 @@ A linked copy shows the original's name and carries **no fields of its own**: re
 | Add a lane | `insert_lane` (`kind`, `name`) |
 | Rename a lane / change its kind | `update_lane` (refused while the lane holds elements the new kind rejects) |
 | Remove an element, a row or a column | `remove_target` (cascades to flows, mappings, scenario entries) |
-| Delete a sheet | `delete_sheet` |
+| Delete a sheet | `delete_sheet` (reports the linked copies on other sheets that go with it) |
+| Group sheets in a named box (a bounded context, a team's area) | `set_context` with `name` + `sheets`; pass `context` to rename it or re-fit it around other sheets. `delete_context` removes the box, never the sheets. `get_model_view` lists contexts and their sheets. Moving a sheet doesn't move its box: re-fit it. |
 
 One cell holds one element. To fit a second element on the same lane in the same slice, widen the slice first (`span_slice`, or `insert_slice` with `cols`). Never fight the grid by stacking.
 
@@ -92,12 +93,12 @@ One cell holds one element. To fit a second element on the same lane in the same
 - `update_element`: `element` address + `patch`. Merges by default (only the keys you pass change). A `fields` patch **replaces the whole field list**: send every field. Unchanged field names keep their ids, so mappings survive. To rename a field without losing mappings that point at it, send it with its existing `id` and the new `name`.
 - `move_element`: to another cell; keeps identity, flows and scenarios.
 - `copy_element`: a linked copy of a `command`, `event`, `readmodel`, `screen` or `external-event` in another cell. From another sheet: `fromSheet` names the original's sheet, `sheet` the copy's. A copy of a copy resolves to the original. Automations cannot be copied. Copy only what you then wire on this sheet; `check_model` reports a copy wired to nothing as `linked-copy-unwired`.
-- `remove_target`: removal. Removing an original removes its linked copies and the flows touching them.
+- `remove_target`: removal. Removing an original removes its linked copies and the flows touching them; the reply's `removedCopies` names each one, with its sheet.
 - A list-shaped read model (a todo list, any query that returns rows) is marked by the node-level list flag, `isList: true` on the read model itself in `place_element` / `update_element`. It is not a field's `isList`. The views return it on the read model; a linked copy reports its original's, and takes it from there (set it on the original).
 
 ### Field shape
 
-Exactly `{ name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?, subfields? }`. `fieldType` is one of `UUID`, `Boolean`, `Double`, `Decimal`, `Date`, `DateTime`, `Long`, `Int`, `String`, `Custom` (a `Custom` field has `subfields`). Unknown keys are dropped **silently**, so a made-up property looks accepted and does nothing.
+Exactly `{ name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?, subfields? }`. `fieldType` is one of `UUID`, `Boolean`, `Double`, `Decimal`, `Date`, `DateTime`, `Long`, `Int`, `String`, `Custom` (a `Custom` field has `subfields`). Any other key is refused: the call fails, changes nothing, and names the keys that are accepted.
 
 - `isList`: this field holds several values.
 - `isGenerated`: the information starts here (minted or computed at this element).
@@ -180,6 +181,20 @@ Marks call out one part of a design: put `data-em-mark-id="<id>"` on the element
 
 Linked copies resolve to their originals throughout: a flow landing on a copy credits the original, a screen and its copy are one issuer, and a copy implies no slice shape of its own.
 
+## Replies
+
+A write answers with what it did plus the sheet's grid **outline**: column letter → slice, row number → lane. That is enough to re-address after columns or rows shift. For contents, read `get_sheet_view` / `get_slice_view` again.
+
+A parameter or key a tool doesn't take fails the call (nothing changes) and the error lists what it does take. If the instructions or a skill name a parameter the tool refuses, the session's tool list predates the server: ask the user to reconnect the EventModeler MCP server, then retry.
+
+## Working alongside others
+
+People and other agents edit the same model live.
+
+- `claim_pin` answers with `alsoInProgress`: the other pins agents are working on, and their sheets. Stay off those sheets where you can. Never delete an original that another sheet copies from without asking (`create_pin` or `reply_pin`): its copies go with it.
+- Before re-adding something that isn't there, read `get_history` for that sheet: a person may have removed it on purpose. Ask rather than restore it.
+- A pin region with `sheetDeleted` points at a sheet that is gone. Read `get_history`, and ask the human if the note no longer makes sense.
+
 ## Batching
 
-Prefer the granular tools: one `place_element`, one `create_flow` at a time, in story order, left to right. Use `apply_operations` only for a unit that must land all-or-nothing (a failure applies nothing; resend the whole batch). `build_sheet_from_spec` creates a whole sheet from one spec, all-or-nothing; reach for it only to scaffold a sheet whose shape is already settled.
+Prefer the granular tools: one `place_element`, one `create_flow` at a time, in story order, left to right. Use `apply_operations` only for a unit that must land all-or-nothing (a failure applies nothing; resend the whole batch). A step for a tool that takes no arguments may omit `args`. `build_sheet_from_spec` creates a whole sheet from one spec, all-or-nothing; reach for it only to scaffold a sheet whose shape is already settled. A screen in a spec takes `design` as HTML, as `place_element` does.
