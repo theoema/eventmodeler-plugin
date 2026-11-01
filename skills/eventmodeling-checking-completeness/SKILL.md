@@ -21,7 +21,7 @@ Use these results as the source of truth for the completeness check.
 **Before treating any elements as duplicates**: check whether they are linked copies. An element with `linkedCopy: true` (and an `originalStickyId`) is an intentional **linked copy** of an original, placed elsewhere for readability, not a modeling defect. When two or more elements share a name and type:
 - If any of them is a linked copy, do not report a duplicate. This is expected, not a gap.
 - Never propose deleting, suppressing, or "cleaning up" either element in a linked pair. Specifically, never target the original (the one that is not a copy) for removal — copies reference it, and deleting it removes every copy too.
-- Only flag same-named elements as an actual duplicate gap when **none** of them is a linked copy — i.e., they are genuinely two independent, unlinked elements describing the same concept. `check_model` does not compare names, so look for same-named elements in `get_sheet_view` yourself.
+- Only flag same-named elements as an actual duplicate gap when **none** of them is a linked copy — i.e., they are genuinely two independent, unlinked elements describing the same concept. Same-named screens are the exception: they are the instances of one page split by component (`eventmodeling-identifying-outputs` Step 5c), each with its own component marked. `check_model` does not compare names, so look for same-named elements in `get_sheet_view` yourself.
 
 ### What `check_model` covers
 

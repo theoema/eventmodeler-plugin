@@ -55,7 +55,7 @@ It returns a flat `findings` list (errors first; each with a stable `check` code
 
 | Area | `check_model` reports |
 |---|---|
-| Wiring | `command-without-event`, `command-without-issuer`, `command-multiple-issuers`, `screen-multiple-commands`, `automation-without-todo-list`, `screen-disconnected`, `event-disconnected`, `event-without-command`, `orphan-element`, `linked-copy-unwired`, `dangling-flow` |
+| Wiring | `command-without-event`, `command-without-issuer`, `command-multiple-issuers`, `screen-multiple-commands`, `automation-without-todo-list`, `screen-disconnected`, `screen-mark-unanchored`, `event-disconnected`, `event-without-command`, `orphan-element`, `linked-copy-unwired`, `dangling-flow` |
 | Direction and layout | `flow-backward`, `column-multiple-events`, `sheet-starts-with-command`, `state-change-without-trigger`, `external-event-direct` |
 | Read models | `read-model-without-source`, `read-model-unconsumed` |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` |
@@ -68,7 +68,7 @@ Errors are the method's hard rules (one issuer per command, flows that read forw
 
 This replaces the per-type scans and edge spot-checks the manual checks would otherwise need — start from its `findings`, then use the sections below for the semantic checks it can't make (is each name a true domain fact, immutability, whether read models are deterministic, scenario coverage depth). A clean `check_model` is necessary but not sufficient — still do the semantic pass.
 
-Not checked by `check_model`; do these by hand from `get_sheet_view`: a command named like a query (`Load Orders`) and an event named for the UI, machinery or a calculation (`Button Clicked`, `Total Calculated`), a generic "User" actor lane, two screens in one column, same-named elements that are not linked copies, a read model with no view scenario, a scenario's examples and the slice it sits in, and slice names and statuses. An event with no producing command (`event-without-command`) is expected when it is another system's fact in a second swimlane lane, so judge it by its lane.
+Not checked by `check_model`; do these by hand from `get_sheet_view`: a command named like a query (`Load Orders`) and an event named for the UI, machinery or a calculation (`Button Clicked`, `Total Calculated`), a generic "User" actor lane, two screens in one column, same-named elements that are not linked copies (except screens: same-named screens are the instances of one page, Step 5c of `eventmodeling-identifying-outputs`, so judge them by whether each marks a different component), a read model with no view scenario, a scenario's examples and the slice it sits in, and slice names and statuses. An event with no producing command (`event-without-command`) is expected when it is another system's fact in a second swimlane lane, so judge it by its lane.
 
 ### 1. Entity/Timeline Completeness Check
 

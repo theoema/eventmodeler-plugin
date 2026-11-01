@@ -30,6 +30,7 @@ Every tool takes `modelId` (from `list_models`). Tools that act on a sheet take 
 | Validate | `check_model` |
 | Look at the board | `get_model_view`, `get_sheet_view`, `get_slice_view`, `get_cell_view`, `render_sheet` |
 | Screen mockup | `place_element` with `design`, or `set_screen_design` |
+| Call out part of a screen | `marks` on `place_element` / `set_screen_design` |
 
 Lane kinds and what each accepts (strict; a wrong element is refused with `LANE_MISMATCH`):
 
@@ -161,13 +162,15 @@ Use a note for something decided or observed. Use a pin for something that needs
 
 `place_element` with `design`, or `set_screen_design` afterwards: sanitized HTML and CSS (no scripts or handlers). `set_screen_theme` sets the model-wide look once, so each screen stays a few lines of semantic markup. Check with `render_screen`.
 
+Marks call out one part of a design: put `data-em-mark-id="<id>"` on the element and pass `marks: [{ id, color?, blurOutside?, whiteOutside? }]` with the design. The element is outlined (default red `#e74c3c`); `blurOutside` blurs the rest of the page, `whiteOutside` whites it out. They show on the canvas, in `render_screen`/`render_sheet`/`get_pin` pictures, and in board files. `set_screen_design` without `marks` keeps the marks whose element is still in the new HTML; `marks: []` clears them. A linked screen copy shows its original's design and marks; for the same page with another part marked, place a plain screen of the same name.
+
 ## Validation
 
 `check_model` (optionally one `sheet`) runs the mechanical checks and returns findings, errors first, each with a severity, a stable `check` code, the sheet, a target (an element address, a slice name or `column C`) and a message naming the cells to look at. It does not judge anything: a clean result means the structure is sound, not that the model is right. Run it before any hand-rolled checking, then apply the rules by reading the slices.
 
 | Area | Codes (severity) |
 |---|---|
-| Wiring | `command-without-event` (error), `command-without-issuer` (error), `command-multiple-issuers` (error), `screen-multiple-commands` (error), `event-without-command` (warning), `automation-without-todo-list` (error), `read-model-without-source` (error), `read-model-unconsumed`, `screen-disconnected`, `event-disconnected`, `orphan-element`, `linked-copy-unwired` (warnings), `dangling-flow` (error) |
+| Wiring | `command-without-event` (error), `command-without-issuer` (error), `command-multiple-issuers` (error), `screen-multiple-commands` (error), `event-without-command` (warning), `automation-without-todo-list` (error), `read-model-without-source` (error), `read-model-unconsumed`, `screen-disconnected`, `screen-mark-unanchored`, `event-disconnected`, `orphan-element`, `linked-copy-unwired` (warnings), `dangling-flow` (error) |
 | Direction and layout | `flow-backward` (error; the closing event into a todo-list read model is exempt), `column-multiple-events` (error), `sheet-starts-with-command` (warning), `state-change-without-trigger` (warning), `external-event-direct` (warning) |
 | Slices | `slice-mixed-shape` (error), `empty-slice` (info) |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` (warnings) |
