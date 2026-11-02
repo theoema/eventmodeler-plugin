@@ -88,15 +88,16 @@ Provides to UI/Processors:
 ```
 ReadModel Catalog: Order System
 
-1. Order Status View
+1. Order Status Read Model
    Purpose: UI shows current order status
    Events: Order Created, Order Confirmed, Payment Authorized, Order Shipped, Order Cancelled
    Data: orderId, status, createdAt, confirmedAt, paymentId, shipmentId
    Consumed by:
      - Order Status screen (UI)
      - Customer Dashboard (UI)
+     - Order Processing Processor (decides if can ship)
 
-2. Order List View   (list-shaped)
+2. Order List Read Model
    Purpose: UI lists all orders for a customer
    Events: Order Created, Order Confirmed, Order Cancelled
    Data: orderId, customerId, total, status, createdAt
@@ -104,21 +105,21 @@ ReadModel Catalog: Order System
      - Customer Order History (UI)
      - Order Search/Filter (UI)
 
-3. Payment Status View
+3. Payment Status Read Model
    Purpose: UI shows payment status
    Events: Order Confirmed, Payment Authorized, Payment Failed
    Data: orderId, paymentId, status, authCode, failureReason, timestamp
    Consumed by:
      - Payment Status screen (UI)
+     - Accounting Processor (reconciliation)
 
-4. Shipment Tracking View
+4. Shipment Tracking Read Model
    Purpose: UI shows tracking information
    Events: Order Shipped, Delivery Confirmed
    Data: orderId, shipmentId, trackingNumber, carrier, shippedAt, estimatedDelivery
    Consumed by:
      - Order Tracking screen (UI)
-
-(The automations below are not consumers of these screen-facing read models: each has its own todo list — see section 6.)
+     - Customer notifications (Processor)
 ```
 
 ### 5. Identify Missing Data
@@ -126,50 +127,50 @@ ReadModel Catalog: Order System
 ```
 Question: What if UI needs "estimated delivery date"?
 Event: Order Shipped has carrier + trackingNumber
-Action needed: Add estimatedDelivery to the Order Shipped event
-  (or mark it isGenerated on the read model, if it is computed)
+Action needed: Add estimatedDelivery to Order Shipped event
+  (or mark it `isGenerated` on the read model, if it is computed)
 
 Question: What if UI needs to show "payment method" on status?
 Event: Order Confirmed has paymentMethod
-Action needed: Include paymentMethod in the relevant read models
+Action needed: Include paymentMethod in relevant read models
 
 Question: What if UI needs "item descriptions"?
 Event: Order Created has items[]
 But: items[] only has productId
-Action needed: The product descriptions must come from some event on the sheet
-  (a product catalog event feeding the read model) — otherwise the field has no source and is a gap
+Action needed: Enrich with product descriptions from catalog
+  (via join with product service)
 ```
 
 ### 6. Processor Outputs
 
-Each automation reads its own todo list (`eventmodeling-designing-automation-chains`): outstanding work, opened and closed by events — not a status column on an entity view.
-
 ```
-Automation: Inventory Reserver
-Reads todo list: Orders Awaiting Reservation (list-shaped)
-  opened by:  Payment Authorized
-  closed by:  Inventory Reserved
-Issues command:
+Processor: Inventory System
+Consumes from read models:
+  - Orders in "Payment Authorized" status
+  - Items and quantities needed
+Produces commands:
   - Reserve Inventory
 
-Automation: Fulfillment Creator
-Reads todo list: Orders Awaiting Shipment (list-shaped)
-  opened by:  Inventory Reserved
-  closed by:  Shipment Created
-Issues command:
+Processor: Fulfillment System
+Consumes from read models:
+  - Orders in "Inventory Reserved" status
+  - Items and quantities
+  - Shipping address
+Produces commands:
   - Create Shipment
 
-Automation: Notification Sender
-Reads todo list: Notifications To Send (list-shaped)
-  opened by:  Order Created, Order Confirmed, Order Shipped, Delivery Confirmed
-  closed by:  Notification Sent
-Issues command:
-  - Send Notification
+Processor: Notification System
+Consumes from read models:
+  - Order Created (sends confirmation)
+  - Order Confirmed (sends receipt)
+  - Order Shipped (sends tracking)
+  - Delivery Confirmed (sends thank you)
+Does not produce commands (info-only)
 ```
 
-## Shape of a complete read model catalog
+## Legacy markdown-document format (superseded — kept for reference only)
 
-The same information a catalog states — kept on the sheet as elements, fields, flows and notes, and presented as text at the end of the step.
+Older versions of this skill wrote the read model catalog as a markdown document instead of placing elements on the sheet. The actual mechanism today is placing elements on the sheet (Step 5a–5i in the main SKILL.md) — this template is kept only so the shape of the information (what a complete read-model catalog covers) stays documented somewhere.
 
 ```markdown
 # Outputs: [Domain Name]
@@ -178,10 +179,10 @@ The same information a catalog states — kept on the sheet as elements, fields,
 
 | ReadModel | Purpose | Events | Consumed By |
 |-----------|---------|--------|-------------|
-| Order Status | Show order state | Order Created, Order Confirmed | UI |
+| Order Status | Show order state | Order Created, Order Confirmed | UI, Processor |
 | Order List | List orders | Order Created, Order Cancelled | UI |
-| Payment Status | Payment info | Order Confirmed, Payment Authorized | UI |
-| Shipment Tracking | Track delivery | Order Shipped, Delivery Confirmed | UI |
+| Payment Status | Payment info | Order Confirmed, Payment Authorized | UI, Accounting |
+| Shipment Tracking | Track delivery | Order Shipped, Delivery Confirmed | UI, Notifications |
 
 ---
 
@@ -233,6 +234,8 @@ The same information a catalog states — kept on the sheet as elements, fields,
 
 **Consumed By**:
 - Order Status Screen (displays)
+- Order Processing Processor (checks status)
+- Notification System (sends updates)
 
 --- [Repeat for each read model]
 
@@ -246,11 +249,11 @@ Verify all UI needs have event sources:
 
 | UI Need | Event Source | Status |
 |---------|-------------|--------|
-| Order status | Order Confirmed, Order Shipped | covered |
-| Tracking number | Order Shipped | covered |
-| Order items | Order Created | covered |
-| Estimated delivery | Order Shipped | covered |
-| Cancellation reason | Order Cancelled | covered |
+| Order status | Order Confirmed, Order Shipped |  |
+| Tracking number | Order Shipped |  |
+| Order items | Order Created |  |
+| Estimated delivery | Order Shipped |  |
+| Cancellation reason | Order Cancelled |  |
 
 ### Missing Data
 
@@ -261,11 +264,12 @@ Identify UI needs without event sources:
 
 ## Processor Consumption
 
-### Automations and their todo lists:
+### Processors and their reads:
 
-| Automation | Todo list (opened by → closed by) | Issues command |
-|------------|-----------------------------------|----------------|
-| Inventory Reserver | Orders Awaiting Reservation (Payment Authorized → Inventory Reserved) | Reserve Inventory |
-| Fulfillment Creator | Orders Awaiting Shipment (Inventory Reserved → Shipment Created) | Create Shipment |
-| Notification Sender | Notifications To Send (several → Notification Sent) | Send Notification |
+| Processor | Reads From | Writes Commands |
+|-----------|-----------|-----------------|
+| Inventory | Order Status View (Authorized) | Reserve Inventory |
+| Fulfillment | Order Status View (Inventory Reserved) | Create Shipment |
+| Notification | Order Status View (all) | None (info-only) |
+| Accounting | Payment Status View | None (reporting) |
 ```

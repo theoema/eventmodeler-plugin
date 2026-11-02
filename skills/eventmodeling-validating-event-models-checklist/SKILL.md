@@ -1,13 +1,13 @@
 ---
 name: eventmodeling-validating-event-models-checklist
-description: "Validate an event model against the structural checks across 7 phases. Identifies notation anti-patterns and confirms the model is internally consistent. Use when reviewing an event model for readiness or after completing event modeling steps. Do not use for: reviewing incomplete or in-progress models (use eventmodeling-validating-event-models), or for elaborating new scenarios (use eventmodeling-elaborating-scenarios)."
+description: "Validate an event model against 14 structural checks across 7 phases. Identifies notation anti-patterns and confirms the model is internally consistent. Use when reviewing an event model for readiness or after completing event modeling steps. Do not use for: reviewing incomplete or in-progress models (use eventmodeling-validating-event-models), or for elaborating new scenarios (use eventmodeling-elaborating-scenarios)."
 ---
 
 # Event Model Validation Checklist Skill
 
-This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. Tool names and conventions are in `eventmodeling-core-rules` → `../eventmodeling-core-rules/references/tools.md`.
+This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 
-You are in **Critic Mode**: apply every rule strictly, surface every violation, and record findings rather than quietly fixing them.
+Tool names and conventions are in [tools.md](../eventmodeling-core-rules/references/tools.md).
 
 **Purpose**: Validate any event model against 14 structural checks across 7 phases, plus two final questions. Identifies notation anti-patterns and confirms the model is internally consistent.
 
@@ -20,8 +20,8 @@ You are in **Critic Mode**: apply every rule strictly, surface every violation, 
 - When suspicious of structural issues in the model
 
 **What It Does**:
-1. Reads the current model (EVENT, COMMAND, READMODEL elements and their flows) as input
-2. Runs `check_model` first, then applies the checks it cannot make
+1. Reads the current model (EVENT, COMMAND, READMODEL elements) as input
+2. Runs `check_model` first, then systematically applies the 14 validation checks across 7 phases, plus the two final questions
 3. Identifies notation anti-patterns (calculations modeled as events, events mixed into the wrong entity's timeline, etc.)
 4. Verifies read model/event distinction
 5. Confirms every event and command traces cleanly
@@ -33,10 +33,17 @@ You are in **Critic Mode**: apply every rule strictly, surface every violation, 
 
 Read the current model before running the checklist:
 
-1. **Run `check_model` first** (once per sheet with `sheet`, or for the whole model). Several checklist items have a purely mechanical half it answers directly — start each of those from its `findings`, and spend the manual effort on the semantic judgement it can't make. A row with no code in the middle column is all by hand.
-2. `get_sheet_view` for names, types, lanes, flows and scenario titles (Phase 1.1 ownership by lane, Phase 2.3 past tense, duplicate names); `get_slice_view` for the field-level checks (Phase 2.1/2.2 computed or mutable event data, Phase 3 read-model sources, Phase 5 traceability, Phase 7 structural shapes via flows) and for scenario bodies (Phase 4); `get_model_view` to see every sheet.
+- **Name/type checks** (Phase 1.1 timeline ownership by name, Phase 2.3 past tense, duplicate names) — `get_sheet_view` once per sheet: every element's name and type by cell, with the lanes, flows and scenario titles. `get_model_view` lists the sheets.
+
+- **Field-level checks** (Phase 2.1/2.2 computed or mutable event data, Phase 3 read-model sources, Phase 5 traceability, Phase 7 structural shapes via flows) — `get_slice_view` per slice: elements with fields and flows, no scenario bodies needed.
+
+- **Business rules / scenarios** (Phase 4) — `get_slice_view` also returns the scenario bodies.
+
+Slice names come from `get_model_view`.
 
 An entity's timeline in this checklist is its own event stream: the events in one swimlane lane (the lane named for the entity).
+
+Also run `check_model` once per sheet up front (or for the whole model) — several checklist items (Command With Multiple Issuers in Phase 1: `command-multiple-issuers`, backward-arrow / event-flow in Phase 6: `flow-backward`, read-model-source distinctions in Phase 3: `read-model-without-source`) have a purely structural half the tool answers directly, so start each of those from its `findings` and spend the manual effort on the semantic judgement the tool can't make. A row with no code in the table below is all by hand.
 
 ## What `check_model` Covers
 
@@ -49,18 +56,18 @@ An entity's timeline in this checklist is its own event stream: the events in on
 | 2.3 Past-tense names | `event-name-not-past-tense` | Is the chosen name a true domain fact? |
 | 3.1 A read model is not an event timeline | (a read model cannot be placed in a swimlane lane) | Whether something modeled as an event is really a projection |
 | 3.2 A read model has a natural query | `read-model-unconsumed`, `read-model-without-source` | What question it answers |
-| 4.1 Command preconditions documented | `slice-without-scenario`, `no-error-scenario`, `scenario-when-shape`, `scenario-then-shape` | Whether the scenarios state the preconditions explicitly |
+| 4.1 Command preconditions documented | `slice-without-scenario`, `no-error-scenario`, `scenario-when-shape`, `scenario-then-shape` | Whether the scenarios state the preconditions explicitly (`eventmodeling-assessing-scenario-coverage` rates how much of a slice they cover) |
 | 4.2 Event preconditions explicit | — | All of it |
-| 5.1 Input → Event → Read Model traceability | `untraceable-field`, `unsourced-fields`, `read-model-without-source`, `command-without-event` | Whether the stated origins are true |
+| 5.1 Input → Event → Read Model traceability | `untraceable-field`, `unsourced-fields`, `read-model-without-source`, `command-without-event` | Whether the stated origins are true (`eventmodeling-tracing-data` follows one field through the model) |
 | 6.1 No impossible event sequences | `sheet-starts-with-command`, `state-change-without-trigger`, `flow-backward`, `column-multiple-events`, `event-without-command` | Whether the sequence can happen in this business |
 | 6.2 No event in two entities' timelines | — (look for the same fact modeled twice, unlinked) | Naming/boundary mistakes behind a "shared" event |
 | 7.1 No SCREEN wired to more than one COMMAND | `screen-multiple-commands` | — |
-| 7.2 Fan-out/fan-in outliers reasoned about | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (candidates only) | Whether the outlier is justified by the business |
+| 7.2 Fan-out/fan-in outliers reasoned about | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (candidates only: more than two resulting events, more than three source events, a slice well above its sheet's median scenario count) | Whether the outlier is justified by the business |
 | Final questions 1–2 | — | All of it |
 
 ## Recording Findings
 
-Critic Mode: do not fix what you find; record it.
+After the checklist, record what you found rather than quietly fixing it.
 - A finding → `set_note` on the cell that holds the element (a note attaches to a cell, a slice (column) or a lane (row), never to an element itself; a cell holds one element, so the cell is the element). `set_note` replaces the whole note: read the current one first (`get_cell_view`, `get_slice_view`) and append. Start each finding with its kind — `TASK:` for a failed check that must be fixed, `COMMENT:` for a warning or recommendation — and name the element.
 - A question only the human can answer → `create_pin` on the cells concerned, worded as a question. It stays open until answered. A decided failure is never a question — it is a scenario with an error outcome (`eventmodeling-elaborating-scenarios`).
 - Findings about a whole slice go on the slice (`set_note` with the column letter or slice name); about a lane, on the row number.
@@ -71,7 +78,7 @@ Critic Mode: do not fix what you find; record it.
 - Check 1.1: Each event belongs to exactly one entity/timeline
 - Check 1.2: Each command is issued by exactly one thing — no COMMAND has more than one inbound SCREEN/AUTOMATION flow
 
-**Anti-pattern to catch**: a command wired from two issuers — a double-issuer command is most likely a manual flow added later or one left over from earlier wiring, not a deliberate choice
+**Anti-pattern to catch**: a command wired from two issuers — `check_model` reports it as `command-multiple-issuers`, and `create_flow` does not guard against it, so a double-issuer command found on the sheet is most likely a flow added by hand later or left over from earlier wiring
 
 ### Phase 2: Event Quality Validation (3 checks)
 - Check 2.1: Events represent domain facts, not calculations
@@ -123,7 +130,7 @@ The skill returns a validation report (in your reply, with the findings recorded
 
 ### For Each Check
 ```
-Check 1.2: Command Issued by Exactly One Thing
+ Check 1.2: Command Issued by Exactly One Thing
 Status: PASS
 Evidence: [Specific examples from your model]
 ```
@@ -138,7 +145,7 @@ Fix: [Recommended action]
 
 ### Final Verdict
 ```
-Status: PASS (or PASS WITH WARNINGS or FAIL)
+Status:  PASS (or  PASS WITH WARNINGS or  FAIL)
 Confidence: [percentage]
 ```
 
@@ -148,31 +155,31 @@ Confidence: [percentage]
 
 ### 1. Calculation Events
 ```
-ANTI-PATTERN:
+ ANTI-PATTERN:
 Calculation Performed {
   metric: 4.5  ← Mutable/recalculated
   timestamp: T
 }
 
-CORRECT:
+ CORRECT:
 - Event: Some Action Occurred (immutable fact)
-- Read model: Metric View (recalculated from events)
+- ReadModel: Metric View (recalculated from events)
 ```
 
 **Why**: Calculations change as source data changes. Events are immutable.
 
 ### 2. Command With Multiple Issuers
 
-A command is never issued by more than one thing — a COMMAND with 2+ inbound SCREEN/AUTOMATION flows hides which actor is actually responsible. Record it on the command's cell, naming the issuer to keep and the flow(s) to remove (`remove_flow`).
+A command is never issued by more than one thing — a COMMAND with 2+ inbound SCREEN/AUTOMATION flows hides which actor is actually responsible. Decide which issuer really triggers it, keep that flow and remove the rest (`remove_flow`); record it on the command's cell, naming the issuer to keep and the flow(s) to remove.
 
-**Why**: Each command represents one specific trigger's decision to act — collapsing two triggers onto one command usually means either a naming/slice-boundary mistake or a stray flow.
+**Why**: Each command represents one specific trigger's decision to act — collapsing two triggers onto one command usually means either a naming/slice-boundary mistake or a stray manual/pre-existing flow.
 
 ### 3. An Event Shared Across Entities
 ```
-ANTI-PATTERN:
+ ANTI-PATTERN:
 Entity A → Event A → also placed on Entity B's timeline
 
-CORRECT:
+ CORRECT:
 Entity A → Event A (on Entity A's timeline only)
 Entity B reacts to Event A via a read model/automation, it doesn't own it
 ```
@@ -181,16 +188,16 @@ Entity B reacts to Event A via a read model/automation, it doesn't own it
 
 ### 4. A Screen Fanning Into Multiple Commands ("the bed")
 ```
-ANTI-PATTERN:
+ ANTI-PATTERN:
 Screen → Command A
        → Command B
        → Command C
 
-CORRECT:
+ CORRECT:
 Screen → Command A only (one screen, one decision)
 ```
 
-**Why**: A screen represents the moment a user has already committed to one decision. Wiring it to several commands hides where that choice actually gets made — see `eventmodeling-core-rules`'s **Structural Shapes** section for this and the three related fan-out/fan-in candidates.
+**Why**: A screen represents the moment a user has already committed to one decision. Wiring it to several commands hides where that choice actually gets made — see `eventmodeling-core-rules`'s **Structural Shapes** section for this and the three related fan-out/fan-in candidates ("left chair", "right chair", "shelf").
 
 ---
 
@@ -214,19 +221,19 @@ Screen → Command A only (one screen, one decision)
 
 ## Success Criteria
 
-**Model is validated when**:
+ **Model is validated when**:
 - All 14 checks pass (or have documented workarounds)
 - No critical anti-patterns identified
 - Both final questions answer YES
 - Event modeling principles are clearly upheld
 
-**Model needs fixes when**:
+ **Model needs fixes when**:
 - Any check fails with clear evidence
 - Anti-patterns identified with specific violations
 - A final question has a NO answer
 - Fixes are straightforward and targeted
 
-**Model should be redesigned when**:
+ **Model should be redesigned when**:
 - Multiple phases fail
 - Structural assumptions are fundamentally flawed
 - Anti-patterns are systemic and pervasive
@@ -277,7 +284,7 @@ Running the checklist after Step 2 prevents wasting time on later steps if the c
 
 ## Checklist Questions by Domain
 
-The skill applies the same checks regardless of domain. Here's how to think about it in different contexts:
+The skill applies the same 14 checks regardless of domain. Here's how to think about it in different contexts:
 
 **E-commerce domain**:
 - Events: Order Created, Order Confirmed, Payment Authorized, Order Shipped
@@ -325,3 +332,10 @@ The principle is the same across all domains: **immutable facts as events, calcu
 - **eventmodeling-plotting-events**: Sequence events chronologically (Step 2)
 - **eventmodeling-designing-event-models**: Design your complete event model
 - **eventmodeling-validating-event-models**: Detailed validator with deep analysis
+
+---
+
+## Validation Checklist Reference
+
+The 14-point checklist is defined in the **Validation Phases** section above.
+Each check includes the anti-pattern to catch and questions to ask when evaluating your model.

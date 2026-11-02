@@ -13,7 +13,7 @@
 Use this template for each slice:
 
 ```
-Slice: [Command name | Read model name | Automation name]
+Slice: [Command Name | Read Model Name | Automation Name]
 Type: state-change | state-view | automation
 
 COMMAND (state-change/automation only): [name] — what it does
@@ -48,16 +48,6 @@ A slice's columns hold one of these shapes. Lanes are the sheet's typed rows: ac
 
 Specification lane: the scenarios of the slice's one command or read model.
 
-**The automation chain** spans three slices, left to right, never one:
-
-```
-[External Event]  →  [Todo-list Read Model]  →  [Automation + Command + Event]
- (feeds the next      state-view slice            automation slice
-  slice's column)
-```
-
-The external event's column has no subject of its own, so it sits inside the todo-list read model's slice (it is that read model's source). The todo-list read model is a state-view slice; the automation with its command and internal event is an automation slice.
-
 **A column that only repeats something** (a linked copy of a read model that feeds a screen, say) has no subject and implies no slice: it sits inside the slice it serves.
 
 ---
@@ -71,10 +61,10 @@ Slice: Place Order (state-change)
   produces Order Placed
        ↓
 Slice: Confirm Order (state-change)
-  its command validates against Order Placed (a linked copy of it in this slice)
+  its command validates against Order Placed (via its own state projection)
 ```
 
-Advantages: loose coupling, asynchronous, each slice owns its own state — no shared state between them. The second command still has its own trigger (a screen or an automation in its own slice): two commands in a row with nothing issuing the second is a gap, not a shortcut.
+Advantages: loose coupling, asynchronous, each slice owns its own state — no shared state class between them.
 
 ### Pattern 2: Command Slice → Event → Read Model Slice
 
@@ -82,8 +72,8 @@ Advantages: loose coupling, asynchronous, each slice owns its own state — no s
 Slice: Place Order (state-change)
   produces Order Placed
        ↓
-Slice: Order Detail (state-view)
-  folds Order Placed into its read model
+Slice: Order Detail View (state-view)
+  projects Order Placed into its read model
 ```
 
 This is the most common dependency: nearly every state-view slice depends on the events produced by one or more state-change slices. The state-view slice can be developed in parallel, but its projections only produce data once the upstream events exist.
@@ -98,11 +88,11 @@ See the main SKILL.md's "Core Concept" section — never combine a COMMAND and a
 
 ### 2. Name the Slice After Its Element
 
-Use the exact command, read model, or automation name as the slice name — don't invent a broader "feature" name that spans multiple elements.
+Use the exact command, read model, or automation title as the slice title — don't invent a broader "feature" name that spans multiple elements.
 
 ### 3. Express Dependencies as Events, Never as Shared State
 
-Slices never call each other directly and never share state. If slice B needs something from slice A, it's because slice B's command or read model builds on an event that slice A produces — not because they're coupled.
+Slices never call each other directly and never share a state class. If slice B needs something from slice A, it's because slice B's command or read model projects an event that slice A produces — not because they're coupled at the code level.
 
 ### 4. Split Where the Second Subject Begins
 

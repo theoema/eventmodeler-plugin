@@ -5,7 +5,7 @@
 - Banking patterns
 - SaaS patterns
 
-Each entry shows a well-scoped boundary for that domain: what identity it's anchored on, and why that identity — not a category or a time window — is the right one. A timeline here is one entity's own event stream, the events in one swimlane lane.
+Each entry shows a well-scoped boundary for that domain: what identity it's anchored on, and why that identity — not a category or a time window — is the right one.
 
 ---
 

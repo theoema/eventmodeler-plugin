@@ -125,8 +125,8 @@ Same colors with text fields
    - No filtering yet! Capture everything
    - Encourage "What about..." questions
    - Example responses:
-     - "Customer placed order" → Write: "OrderCreated"
-     - "Order was confirmed" → Write: "OrderConfirmed"
+     - "Customer placed order" → Write: "Order Created"
+     - "Order was confirmed" → Write: "Order Confirmed"
      - "What about customer viewed page?" → "Let's capture it for now, we'll refine"
 
 3. **Gentle Filtering** (5-7 min)
@@ -137,12 +137,12 @@ Same colors with text fields
    'Customer viewed catalog' - did this change anything?
    Person: Not really...
    You: Right, viewing doesn't change anything. But if they SELECTED
-        an item, that changes their cart. That's 'ItemAddedToCart'.
+        an item, that changes their cart. That's 'Item Added To Cart'.
 
    'System checked inventory' - did this change system state?
    Person: No, it's internal...
    You: Exactly, internal checks don't count. But when we ACTUALLY
-        reserved inventory, that's a state change: 'InventoryReserved'.
+        reserved inventory, that's a state change: 'Inventory Reserved'.
    ```
 
 4. **Capture Insights** - Add notes on WHY events matter
@@ -169,7 +169,7 @@ Same colors with text fields
    → "Order must be created first"
 
    "So the sequence is?"
-   → Lead to: OrderCreated → OrderConfirmed
+   → Lead to: Order Created → Order Confirmed
    ```
 
 2. **Handle Branches** (5 min)
@@ -177,13 +177,13 @@ Same colors with text fields
    "Can different things happen from here?"
 
    "What if payment fails?"
-   → "PaymentFailed event"
+   → "Payment Failed event"
    → This creates branching paths
 
    Draw branching clearly:
-   OrderConfirmed
-     → PaymentAuthorized → (success path)
-     → PaymentFailed → (failure path)
+   Order Confirmed
+     → Payment Authorized → (success path)
+     → Payment Failed → (failure path)
    ```
 
 3. **Identify Parallel Flows** (5 min)
@@ -226,7 +226,7 @@ Same colors with text fields
    +-----------------------+
 
    Label each field:
-   Customer ← from CreateOrder command
+   Customer ← from Create Order command
    Items ← user selection
    ```
 
@@ -256,8 +256,8 @@ Same colors with text fields
 1. **Extract from Storyboards** (5 min)
    ```
    "Looking at the screens, what are users doing?"
-   → "Clicking Submit" → "CreateOrder command"
-   → "Selecting payment" → "ConfirmOrder command"
+   → "Clicking Submit" → "Create Order command"
+   → "Selecting payment" → "Confirm Order command"
 
    Write commands clearly
    ```
@@ -265,8 +265,8 @@ Same colors with text fields
 2. **Identify Processor Inputs** (5 min)
    ```
    "What does the system do automatically?"
-   → "Check payment gateway" → "AuthorizePayment command"
-   → "Reserve inventory" → "ReserveInventory command"
+   → "Check payment gateway" → "Authorize Payment command"
+   → "Reserve inventory" → "Reserve Inventory command"
 
    Mark these as [Automation]
    ```
@@ -275,7 +275,7 @@ Same colors with text fields
    ```
    "For each command, what data does it need?"
 
-   CreateOrder needs:
+   Create Order needs:
      - customerId (from form/session)
      - items (from form selection)
      - shippingAddress (from form)
@@ -287,7 +287,7 @@ Same colors with text fields
    ```
    "What validation must pass?"
 
-   CreateOrder:
+   Create Order:
      - Customer must exist
      - Items must not be empty
      - Address must be complete
@@ -305,7 +305,7 @@ Same colors with text fields
    ```
    "For each command, what event happens?"
 
-   CreateOrder → OrderCreated (what fields?)
+   Create Order → Order Created (what fields?)
    Specify exactly what fields:
      - orderId (generated)
      - customerId (from command)
@@ -327,13 +327,13 @@ Same colors with text fields
 
 3. **Event → View Mapping** (5 min)
    ```
-   "OrderCreated → Status View shows:"
+   "Order Created → Status View shows:"
    - orderId
    - items
    - total
    - status=Draft
 
-   "OrderConfirmed → Status View updates:"
+   "Order Confirmed → Status View updates:"
    - status=Confirmed
    - confirmedAt timestamp
    ```
@@ -349,7 +349,7 @@ Same colors with text fields
    "Who does what?"
 
    "Is payment something WE do or does an external system?"
-   → If external: PaymentGateway system
+   → If external: Payment Gateway system
    ```
 
 2. **Draw Boundaries** (5 min)
@@ -370,9 +370,9 @@ Same colors with text fields
    ```
    "Which system owns each event?"
 
-   OrderCreated → Our Order system
-   PaymentAuthorized → Payment system (external) or our bridge?
-   InventoryReserved → Our Inventory system
+   Order Created → Our Order system
+   Payment Authorized → Payment system (external) or our bridge?
+   Inventory Reserved → Our Inventory system
    ```
 
 4. **Identify Team Structure** (5 min)
@@ -399,7 +399,7 @@ Same colors with text fields
    Scenario: Create order successfully
      Given: Customer exists, products exist
      When: Customer creates order with items
-     Then: OrderCreated event produced, status=Draft
+     Then: Order Created event produced, status=Draft
 
    Write on board/doc with team reviewing
    ```
@@ -410,7 +410,7 @@ Same colors with text fields
 
    Scenario: Reject with invalid customer
      Given: Customer ID doesn't exist
-     When: CreateOrder attempted
+     When: Create Order attempted
      Then: Command rejected, no event
 
    → Quick, obvious failures

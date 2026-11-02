@@ -5,13 +5,11 @@ description: "Validate and fix an entity's event timeline boundary — is it anc
 
 # Optimizing Stream Design
 
-This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. Tool names and conventions are in `eventmodeling-core-rules` → `../eventmodeling-core-rules/references/tools.md`.
-
-You are in **Critic Mode**: review what is there, apply every rule strictly, and record findings rather than quietly restructuring the model.
-
-**Terminology**: in this skill a *timeline* is one entity's own event stream — the events in one swimlane lane, the lane named for that entity. It is not a sheet. Read the lanes and the events in them with `get_sheet_view` (lanes with their kinds; every element by cell address) and `get_model_view` (every sheet).
+This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 
 ## Timeline Boundary Optimization
+
+> In this skill a "timeline" is one entity's own event stream — the events that happened to that entity. It is not a sheet.
 
 **Purpose**: Validate timeline boundaries — confirm each entity's event timeline is anchored on a single business entity's own lifecycle, and catch the two common anti-patterns (an unbounded collection, or an unrelated event log) before they get modeled further.
 
@@ -41,11 +39,11 @@ A long timeline is not, by itself, evidence of a design problem — an account o
 
 ## Timeline Boundary Review
 
-For each entity's timeline in scope, work through:
+Read the events with `get_sheet_view` (every element by cell address; `get_model_view` for every sheet). For each entity's timeline in scope, work through:
 
 ### 1. Name the identity
 
-What single business entity does this timeline represent the history of? Write it down explicitly (e.g. `orderId`, not "orders"). The identity shows in the lane's name and in the id field the lane's events share; where the lane doesn't already say it, record it in the lane's note (`set_note` on the row number).
+What single business entity does this timeline represent the history of? Write it down explicitly (e.g. `orderId`, not "orders"). Where the model doesn't already state it, record it in a note (`set_note`) on the cell of the entity's first event.
 
 ### 2. Check every event against that identity
 
@@ -60,11 +58,11 @@ Does each event on the timeline describe something that happened to *this* entit
 | Events span unrelated concerns (users, orders, payments mixed) | Pattern 4 (Event Log) anti-pattern | Split into one timeline per concern |
 | Timeline conflates an entity's active life with its historical record | Missing the Pattern 5 split | Separate active vs. archived/historical timelines |
 
-## Recording Findings
+### 4. Record the result
 
-Critic Mode: record, don't restructure.
-- A finding → `set_note` on the lane (the row number) for a whole-timeline finding, or on the cell of the event concerned. `set_note` replaces the whole note: read the current one first (`get_sheet_view` shows lane notes, `get_cell_view` a cell's) and append. Start each finding with its kind — `TASK:` for a boundary that is wrong, `COMMENT:` for a recommendation — and name the lane or event.
-- Re-scoping a boundary changes the structure of the model and often what the business means, so a recommendation to split or re-scope is a question for the human: `create_pin` on the lane's cells, worded as a question that names the identity you recommend. Only after they agree is the correction made, with the structure tools (`insert_lane` for the new timeline, `move_element` to move an event into its own lane, `update_lane` to rename).
+Record findings; don't restructure the model on your own.
+- A wrong boundary → `set_note` on the cell of the event concerned (a note attaches to a cell, a slice or a lane, never to an element). `set_note` replaces the whole note: read the current one first (`get_cell_view`) and append. Start the finding with `TASK:` and name the event.
+- A recommendation to split or re-scope changes the structure of the model and often what the business means, so it is a question for the human: `create_pin` on the cells concerned, worded as a question that names the identity you recommend. Only after they agree is the correction made, with the structure tools ([tools.md](../eventmodeling-core-rules/references/tools.md)).
 
 ---
 

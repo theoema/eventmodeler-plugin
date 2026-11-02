@@ -5,19 +5,20 @@ description: "Step 7 of Event Modeling - Elaborate scenarios using Given-When-Th
 
 # Elaborating Scenarios
 
-This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. Tool names and conventions are in `eventmodeling-core-rules` → `../eventmodeling-core-rules/references/tools.md`.
+This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 
-You are in **Modeling Mode**: build the scenarios, flag what is unclear and move on.
+Tool names and conventions are in [tools.md](../eventmodeling-core-rules/references/tools.md).
 
 ## Examples Are the Scenario — Non-Negotiable
 
 **A scenario without concrete example values is not a scenario.** The element names in
 `given`/`when`/`then` only say *which* facts are involved; the example values say *what* happened
-and *why* the outcome follows — they are the actual specification, and the only thing an
-implementation can later be checked against. Every value **essential to the scenario** — the ones the rule decides on
+and *why* the outcome follows — they are the actual specification, and the only thing a generated
+test can assert against. Every value **essential to the scenario** — the ones the rule decides on
 and the ones that tie the steps together — is filled in as `fieldValues: { fieldName: value }` on the
-step it belongs to (`given` events, the `when` command, `then` events, `given`/`then` read
-models), and list read models carry their expected rows (or an explicit empty list). Never record a scenario, never report one done, and never mark this step
+step it belongs to (`given` events, the `when` command, `then` events, the `then` read
+models and a read model's state in `given`, storyline beats), and list read models carry their expected rows in `rows` (or
+`expectEmptyList: true`). Never post a scenario, never report one done, and never mark this step
 complete while an essential value is missing. Details: "Fill the values essential to the scenario"
 below.
 
@@ -35,7 +36,7 @@ input against one state and either succeeds or is rejected. Never write a storyl
 driven by events; GWT otherwise.** Decide this **per read model**, not once for the whole pass:
 does replaying this read model's actually-connected event(s) more than once produce an interesting
 accumulated/changed state worth narrating? A single event type recurring with different data counts
-just as much as a multi-event lifecycle — e.g. `Account Funded` ($40) then `Account Funded` ($70)
+just as much as a multi-event lifecycle — e.g. `Account Funded($40)` then `Account Funded($70)`
 walking a balance from $40 to $110 is a genuine storyline driver. **Todo lists are a prime
 candidate**: an item appears when opened and disappears when completed, which is exactly the kind
 of state progression a storyline is for — as is any read model whose rows accumulate, update, or
@@ -56,21 +57,14 @@ narrated lifecycle, GWT covers everything else about that read model.
 A storyline threads all three beats into one walkthrough; three separate GWTs could each assert one
 transition but not the lifecycle.
 
-### Storyline shape
-
-A storyline is a scenario of its own kind: it sits in the same specification-lane cell as the read model's GWT scenarios (the read model's column) and is written with the same tool, `set_scenario`, passing `storyline` instead of `given`/`when`/`then` (Step 4d). It has a name, an optional description and an ordered list of beats. Each beat is one step of the walkthrough; the *same* read model (like the Todos read model above) appears many times, once per state.
-
-- **Beat order rules** (`set_scenario` refuses a storyline that breaks them): the first beat is a READMODEL; after a READMODEL comes an EVENT (or several); after an EVENT comes another EVENT or a READMODEL. Beats are only READMODELs and EVENTs (an external system's event too) — no COMMAND, SCREEN or other types. End on the READMODEL in the state the last event leaves it in: a storyline ending on an event asserts nothing (`check_model`: `storyline-shape`).
-- Data is set **per beat** — every intermediate state is asserted, not just "not empty": a list READMODEL beat carries its own `rows` (or `expectEmptyList: true`), a single-record READMODEL beat its `fieldValues`, an EVENT beat its `fieldValues`. A read-model beat that says nothing about its state is reported (`scenario-without-examples`).
-- A note beat (`{ note }`) may sit anywhere and is skipped by the order rules — see "Notes — Last Resort Only" before adding one.
-
 ## Notes — Last Resort Only
 
-A scenario can carry a one-line `contextNote` (shown under its title; set it with `set_scenario`) and a free-text `description`, and a storyline can hold note beats. **Notes are only for what cannot be expressed
+A scenario can carry a `contextNote` (one line, shown under its title), and a storyline can hold note beats
+(`{ note: "…" }`). **Notes are only for what cannot be expressed
 with events and the other elements.** Before writing one, ask: could this be a `given` event, a
 read model in `given`, a field example on the command, or a `then` outcome? If yes, model it that
-way — a scenario that tells its story in a note instead of in events is incomplete, and anything built from it
-can't check what's only in prose.
+way — a scenario that tells its story in a note instead of in events is incomplete, and code
+generated from it can't test what's only in prose.
 
 Legit uses: a condition outside the system ("the payment provider is in maintenance"), a business
 assumption or regulation behind the case, why the case matters, a time gap between storyline beats
@@ -98,15 +92,51 @@ values can tell why the outcome follows. A
 scenario whose essential values are missing is incomplete, even when a note explains the
 situation: the fields are the specification, the note is not.
 
-The values are what make the rule visible and checkable. For an expiry rule, the dates go into the
-fields — `Customer Registered` with `registeredAt: 2026-10-12`, `Confirm Email` with `confirmedAt: 2026-10-13` —
+The values are what make the rule visible and testable. For an expiry rule, the dates go into the
+fields — `Customer Registered.registeredAt: 2026-10-12`, `Confirm Email.confirmedAt: 2026-10-13` —
 not into a note saying "registered on 2026-10-12, confirms on 2026-10-13". Keep ids consistent
 across the steps of one scenario (the same `customerId` in every given event, the command and the
 outcome), and pick values that sit on the interesting side of the rule (one day past the limit, not
 a vague "long ago").
 
-Read the elements' field names once (`get_slice_view` shows every element of a slice with its fields) and pick the essential ones per scenario from that. `set_scenario` accepts only field names the element really has — a typo'd key is rejected, never silently dropped. If a value the rule depends on has no field on any element (e.g. the expiry rule needs a
+Read the elements' field names once (`get_slice_view`, per slice) and pick the essential ones per scenario from that. `set_scenario` accepts only field names the element really has — a mistyped key is rejected, never silently dropped. If a value the rule depends on has no field on any element (e.g. the expiry rule needs a
 timestamp no event carries), add that field to the element (`update_element`) — don't move the value into the note.
+
+### Storyline data shape
+
+```
+set_scenario {
+  "scenario": "Customer activation walkthrough",
+  "cell": "<specification cell of the read model's column>",
+  "description": "Optional narrative summary",
+  "storyline": [
+    { "element": "Todos", "expectEmptyList": true },
+    { "element": "Customer Registered" },
+    { "element": "Todos", "rows": [{ "task": "Activate your account" }] },
+    { "element": "Customer Activated" },
+    { "element": "Todos", "expectEmptyList": true }
+  ]
+}
+```
+
+- Each beat names the element it walks through — by address or name (`Sheet!B3.1` for one on another sheet). The *same*
+  element, like the Todos read model above, can appear multiple times across the walkthrough,
+  once per state.
+- **Beat order rules** (`set_scenario` refuses a storyline that breaks them): the first beat is a
+  READMODEL; after a READMODEL comes an EVENT (or several); after an EVENT comes another EVENT or a
+  READMODEL. Beats are only READMODEL or EVENT (an external system's event too) — no COMMAND, SCREEN or other types.
+- There is no error-branch beat (`isError`) here: write the error case as its own scenario, a rejection (Step 4c).
+- A note beat (`{ note: "…" }`, markdown) may sit anywhere and is
+  skipped by the order rules — see "Notes — Last Resort Only" above before adding one.
+- `check_model` reports a storyline with no beats or ending on an event as `storyline-shape`, and a read-model beat that says nothing about its state as `scenario-without-examples`: end on the READMODEL in the state the last event leaves it in.
+- `fieldValues`, `rows` and `expectEmptyList` are set **per beat** — a list READMODEL beat
+  carries its own expected rows (or `expectEmptyList: true`), so every intermediate state is
+  asserted, not just "not empty". This is storyline-only: in a GWT scenario the same data goes on
+  the scenario, never on the `then` step (see Step 4b).
+
+Write storylines with `set_scenario` and `storyline`: `cell` creates the scenario in the same call, in the
+specification-lane cell of the read model's column, beside its GWT scenarios (Step 4d). `storyline` replaces all beats and is never
+mixed with `given`/`when`/`then`.
 
 ## Interview Phase (Optional)
 
@@ -202,19 +232,19 @@ As scenarios are written, ensure each role checks:
 
 ### Common Workshop Mistakes to Avoid
 
-- **Perfectionism**: Don't spend 30 minutes on one scenario. Capture and move.
-- **Missing roles**: One person can't represent all perspectives.
-- **Too technical**: Use domain language, not code. Adjust in implementation.
-- **Incomplete givens**: "Given an order" is too vague. Specify state.
-- **Unclear events**: Every scenario must show what event is produced (or why not).
+ **Perfectionism**: Don't spend 30 minutes on one scenario. Capture and move.
+ **Missing roles**: One person can't represent all perspectives.
+ **Too technical**: Use domain language, not code. Adjust in implementation.
+ **Incomplete givens**: "Given an order" is too vague. Specify state.
+ **Unclear events**: Every scenario must show what event is produced (or why not).
 
 ### Tips for Rapid Creation
 
-- **Use templates**: Have Given/When/Then templates ready
-- **Parallel work**: Different people write different scenarios simultaneously
-- **Capture edge cases**: When someone says "What if...?" → immediately capture as scenario
-- **Reference past decisions**: Point to the event timeline and boundary decisions
-- **Record decisions**: Why did we choose this behavior? (Helps implementers later)
+ **Use templates**: Have Given/When/Then templates ready
+ **Parallel work**: Different people write different scenarios simultaneously
+ **Capture edge cases**: When someone says "What if...?" → immediately capture as scenario
+ **Reference past decisions**: Point to the event timeline and boundary decisions
+ **Record decisions**: Why did we choose this behavior? (Helps implementers later)
 
 ## Scenario Types
 
@@ -234,7 +264,7 @@ Work through each question with the domain in mind. If the answer is "that situa
 
 **Scenarios specify business rules, not technical guarantees.** Every rejection must name a rule a domain expert would recognise and could argue about ("a closed day takes no new todos"). Do not write scenarios for: duplicate or colliding ids, retries/idempotency of the same request, missing or malformed required fields, type/format checks, or infrastructure failures — the implementation handles those and they say nothing about the domain. Rules the brief states explicitly (e.g. "adding on a closed day is rejected") are the core of the coverage and must all be present.
 
-**The error message is domain language** — the reason as a user would read it ("Day is already closed"), never an id, a placeholder or a truncated example value.
+**`errorMessage` is domain language** — the reason as a user would read it ("Day is already closed"), never an id, a placeholder or a truncated example value.
 
 ## Workflow
 
@@ -242,7 +272,7 @@ Work through each question with the domain in mind. If the answer is "that situa
 
 Apply the decision test from "GWT vs. Storyline — Decision Rule" above to every READMODEL on the
 sheet (or in scope). Produce a visible artifact — one line per READMODEL, "yes → storyline" or
-"no → GWT-only" with a one-clause reason — before writing the first scenario, not as a
+"no → GWT-only" with a one-clause reason — before writing the first scenario payload, not as a
 checklist review after. Deciding this list up front is what stops a batch pass from silently
 collapsing into one reused schema for every command and read model alike.
 
@@ -271,7 +301,7 @@ And no event is produced
 ```
 
 ### 2. Command Scenarios - State Validation
-Specify how prior events affect the command:
+Specify how stream state affects command:
 
 ```
 Scenario: Confirm order in Draft state
@@ -291,7 +321,7 @@ Specify how read models display data:
 ```
 Scenario: Display order after creation
 Given an Order Created event with orderId, customerId, items, total
-When the Order Status read model processes this event
+When the Order Status view processes this event
 Then the view should display Order ID, Status "Draft", Total, Items, Created
 
 Scenario: Accumulate payment information
@@ -301,7 +331,7 @@ Then the view should accumulate Payment ID, Auth Code, Payment Status "Authorize
 ```
 
 ### 3b. List-type Read Model Scenarios
-Specify expected rows and empty-list intent when the THEN read model is a list (the whole read model is a set of rows):
+Specify expected rows and empty-list intent when the THEN readmodel is a list (`isList: true`):
 
 ```
 Scenario: Products list shows all created products
@@ -316,7 +346,7 @@ Then the list should be empty
 ```
 
 ### 4. Error Path Scenarios
-Specify how the system handles failures:
+Specify how system handles failures:
 
 ```
 Scenario: Handle declined payment
@@ -348,101 +378,131 @@ And Refund Initiated event should follow
 
 ## Output Format
 
-There is no document output for this step — the deliverable is the scenarios placed directly in the specification-lane cells of the sheet (see "Putting Scenarios on the Sheet" below), using the same command/view/list/error/compensation scenario shapes already illustrated in the Workflow section above (§1–5). Group scenarios under their command or view exactly as shown there; there's no separate presentation format to produce first.
+There is no markdown-document output for this step — the deliverable is the scenarios posted directly to the sheet's specification-lane cells (see "Post Scenarios to the Sheet" below), using the same command/view/list/error/compensation scenario shapes already illustrated in the Workflow section above (§1–5). Group scenarios under their command or view exactly as shown there; there's no separate presentation format to produce first.
 
-## Putting Scenarios on the Sheet
+## Post Scenarios to the Sheet
 
-After designing all scenarios, put them on the sheet. Do this for every command and view that has scenarios.
+After designing all scenarios, post them to the sheet. Do this for every command and view that has scenarios.
 
-A scenario is an element in the **specification lane**, in a cell of the slice it specifies. It is the one element kind allowed to stack: a specification cell holds as many scenarios as the slice needs. Each scenario is tied to exactly one command or one view. Scenario names must be unique on the sheet — `set_scenario` finds a scenario by its address or its name.
+### Step 1 — Identify the target sheet and column
 
-### Step 1 — Find the slice, the column and the specification cell
+Read the model's sheets — names, slices and columns only: `get_model_view`. `render_sheet` gives a visual read when the layout isn't obvious.
 
-`get_sheet_view` shows the grid: slices with their column letters, lanes with their kinds, and every element by cell address. Find the COMMAND or READMODEL you are specifying; its column letter plus the specification lane's row number is the scenario's cell (e.g. the command sits in `C2`, the specification lane is row 5, so the cell is `C5`). If the sheet has no specification lane yet, add one (`insert_lane` with kind `specification`). `render_sheet` gives a visual read when the layout isn't obvious.
+If there is more than one sheet, ask the user which sheet to target.
 
-**Scenarios go on the original element, never on a linked copy.** If the COMMAND/READMODEL you are specifying is a linked copy (`linkedCopy: true`, with `originalStickyId`), resolve it to the original (the element that is not a copy) and put the scenario in the original's column. A copy's column gets no scenario of its own; the original's column holds the one spec for that fact. If the original sits on another sheet, put the scenario there. Never delete the original.
+**Scenarios go on the original element, never on a linked copy.** If the COMMAND/READMODEL you are specifying is a linked copy (`linkedCopy: true`, with `originalStickyId`), resolve to the original (the element that is not a copy), and use the original's sheet and column. A copy's column gets no scenario of its own; the original's column holds the one spec for that fact. If the original sits on another sheet, post there. The same applies to storylines. Never delete the original.
+
+For each command or view being specified, find its column: `get_sheet_view` shows the grid — slices with their column letters, lanes with their kinds, and every element by cell address — take the column whose cells hold that COMMAND or READMODEL. If the user named the slice, find it by name in `get_model_view` or `get_sheet_view` to get its column. The scenario goes in the specification-lane cell of that column: the column letter plus the specification lane's row number (the command sits in `C2`, the specification lane is row 5, so the cell is `C5`). A specification cell holds as many scenarios as the slice needs (the one element kind that stacks); each scenario is tied to exactly one command or view, and scenario names must be unique on the sheet — `set_scenario` finds a scenario by its address or its name. If the sheet has no specification lane yet, add one (`insert_lane` with kind `specification`).
 
 To see what a slice already has, `get_slice_view` returns its elements with fields, its flows, and the scenarios already there with full bodies — read it before adding more.
 
-### Step 2 — Know the valid step elements
+### Step 2 — Load valid step elements
 
-A given/when/then step refers to the element where it lives, **on any sheet**. A command's `given` often needs an event another journey records (a password reset, an account registered elsewhere): name that event on its own sheet. Collect the events, the command and the read models you need from `get_sheet_view` (names and addresses; `get_model_view` lists the other sheets), and their field names from `get_slice_view`. A step is referred to by element address (`B3.1` on the scenario's sheet, `Reset Password!B3.1` on another sheet) or by element name. A name is looked up on the scenario's sheet first, then across the model. A name resolves to the original of a linked copy, an address of a copy points the step at its original, and an ambiguous name (original and copy both on the sheet, or two elements sharing a name) is rejected with the matching addresses — use the address then.
+For each target sheet, discover the elements that may appear in given/when/then: `get_sheet_view` gives their names and addresses, `get_slice_view` their field names. A step may name an element on any sheet: a command's `given` often needs an event another journey records (a password reset, an account registered elsewhere), and the step names that event on its own sheet. `get_model_view` lists the other sheets.
+
+Build a lookup map: `name (lowercase) → { address, type }`. Use this to resolve scenario step names to elements.
+
+A step is referred to by element address (`B3.1` on the scenario's sheet, `Reset Password!B3.1` on another sheet) or by element name. A name is looked up on the scenario's sheet first, then across the model. A name resolves to the original of a linked copy, an address of a copy points the step at its original, and an ambiguous name (original and copy both on the sheet, or two elements sharing a name) is rejected with the matching addresses — use the address then.
 
 **Never place a linked copy just so a step can name it.** A copy is there to be wired to its neighbors on this sheet (`eventmodeling-core-rules`, Linked Copies); a step needs no copy. In the scenario views each step carries a `ref` saying where its element sits (`B3.1`, or `Reset Password!B3.1`), and the scenario card on the canvas shows the sheet name on a step from another sheet.
 
 ### Step 3 — Resolve step references
 
-For each step (given/when/then entry) decide the element it refers to. An unresolved or ambiguous reference makes `set_scenario` fail as a whole, with nothing changed — resolve it (by address) and send the call again. A step whose true source event lives on a different sheet names that event there (`Sheet!B3.1`); don't fabricate a same-sheet event that isn't the real source, and don't leave the `given` empty for it. In a `build_sheet_from_spec` spec, a scenario's steps are addresses within the spec, or `Sheet!B3.1` for an element already on another sheet.
+For each scenario step (given/when/then items), match the step name against the lookup. If a name matches unambiguously, use that element (its name, or its address). If a name is ambiguous (an original and its linked copy are both on the sheet, or two elements share it) use the original's address instead. If it is unmatched, log it and skip that step item rather than failing — the scenario can still be posted with fewer steps. (`set_scenario` itself fails as a whole, changing nothing, on a reference it cannot resolve: fix the reference and send it again.) A step whose true source event lives on a different sheet names that event there (`Sheet!B3.1`); don't fabricate a same-sheet event that isn't the real source, and don't leave the `given` empty for it. In a `build_sheet_from_spec` spec, a scenario's steps are addresses within the spec, or `Sheet!B3.1` for an element already on another sheet.
 
-### Step 4 — Create and fill the scenario in one call
+### Step 4 — Post the scenarios for a column
 
-```
-set_scenario { scenario: "Reject a reservation for a date in the past", cell: "<specification cell>", given: [...], when: [...], then: [...], description?: "..." }
-```
-
-`cell` creates the scenario there when no scenario of that name exists on the sheet yet, and fills it in the same call — nothing is placed if any step fails to resolve. On an existing scenario (by name or address) `cell` is ignored and the call edits it. Every scenario and storyline is written this way; there is no separate placing step.
-
-A step is an element reference (address or name) or `{ element, fieldValues: { fieldName: value } }` to carry the example values. For a state-view scenario whose `when` needs to represent a query rather than a COMMAND, `when` may hold a single inline object that is **not** an element on the sheet: `{ "query": "...", "fieldValues": { "<name>": "<example>" } }`. Provided sections replace that section wholesale; omitted sections are untouched. Group all the scenarios of one command or view in one `apply_operations` batch. `position` orders the card among its slice's scenarios.
-
-**Rules for the steps (the method — keep to them even where a call would accept more):**
-- `given`: prior EVENTs. Where the case depends on what a read model was showing, that read model's state goes in `given` too (the context).
-- `when`: at most one COMMAND or QUERY; empty or a QUERY when `then` is a READMODEL.
-- `then`: EVENTs only OR exactly one READMODEL — never mixed.
-- A step names its element where it lives, on whichever sheet: never a linked copy placed for the step.
-
-`set_scenario` itself only checks that each entry is an element of an allowed kind for its section; it does not enforce these tighter rules, so keep to them yourself. `check_model` reports `scenario-when-shape` where a `when` holds more than one entry or an event, where a command sits beside a read-model `then`, or where a query is followed by events, and `scenario-then-shape` where a `then` mixes a read model with other entries, names several read models, puts an error beside other entries, or holds a command.
-
-### Step 4b — List-type read model scenarios
-
-When `then` is a READMODEL whose whole result is a set of rows (a list-shaped read model — every todo-list read model, `Product List`, `Invoice List`), the scenario needs two things **at the scenario level, never on the `then` step**:
-
-- **the expected rows** — one object per expected row, keyed by the read model's field names. Without this the scenario has no expected output and cannot be verified.
-- **an explicit empty-list flag** when the expected result is an empty list (e.g. after a delete). An empty set of rows alone is ambiguous ("no data provided yet" vs. "intentionally empty") and must not be left standing for the empty case.
-
-In `set_scenario`, pass the expected rows as `rows: [{ <field name>: value, … }, …]`, one object per row, keyed by the read model's field names, or `expectEmptyList: true` for the empty case. Never both. Both are accepted only when `then` is exactly that one read model and it is marked as a list (`isList: true` on the read model; if it isn't yet, `update_element` it first). Rows with a key that is not one of its fields are refused. `rows: []` or `expectEmptyList: false` clears a stored outcome. `get_slice_view` and `get_cell_view` return them with the scenario.
+`set_scenario` writes one scenario per call; post all scenarios for the same column one after another, using `apply_operations` only when they must land all-or-nothing. `cell` creates the scenario in that specification cell when no scenario of that name exists on the sheet yet, and fills it in the same call — no pre-creation needed, and nothing is placed if any step fails to resolve. On an existing scenario (by name or address) `cell` is ignored and the call edits it. Every scenario and storyline is written this way; there is no separate placing step.
 
 ```
 set_scenario {
-  scenario: "Products list shows all created products",
-  given: [{ element: "Product Created", fieldValues: { name: "Shoes", index: "0" } }],
-  then: ["Product List"],
-  rows: [{ name: "Shoes", index: "0" }]
+  "scenario": "<name>",
+  "cell": "<specification cell>",
+  "given": [...],
+  "when": [...],
+  "then": [...]
 }
+```
+`given`/`when`/`then` are arrays of element references: an address or name, or `{ "element": "<address or name>", "fieldValues": { "<field>": "<example>" } }`. For a state-view scenario whose `when` needs to represent a query rather than a COMMAND, `when` may hold a single inline object that is **not** an element on the sheet: `{ "query": "...", "fieldValues": { "<name>": "<example>" } }`. Provided sections replace that section wholesale; omitted sections are untouched. `position` orders the card among its slice's scenarios.
+
+**Rules for the steps (`set_scenario` does not enforce the tighter ones — keep to them yourself; `check_model` reports `scenario-when-shape` and `scenario-then-shape` where they are broken):**
+- `given`: EVENTs only (an external system's event too); where the case depends on what a read model was showing, that read model's state goes in `given` as well (there is no separate context section)
+- `when`: at most one COMMAND; empty or one QUERY when `then` contains a READMODEL
+- `then`: EVENTs only OR exactly one READMODEL — never mixed
+- A step names its element where it lives, on whichever sheet — never a linked copy placed just so a step can name it
+
+`set_scenario` itself only checks that each entry is an element of an allowed kind for its section; it does not enforce these tighter rules. `check_model` reports `scenario-when-shape` where a `when` holds more than one entry or an event, where a command sits beside a read-model `then`, or where a query is followed by events, and `scenario-then-shape` where a `then` mixes a read model with other entries, names several read models, puts an error beside other entries, or holds a command.
+
+### Step 4b — List-type readmodel scenario fields
+
+When `then` contains a READMODEL marked `isList: true` — set on the element when it was created, per `eventmodeling-core-rules`'s READMODEL section and `eventmodeling-identifying-outputs`/`eventmodeling-designing-automation-chains` (`update_element` if it isn't yet) — add two fields **at the scenario level** (not inside `then`). Setting `rows` or `expectEmptyList` on a `then` entry is not supported:
+
+**`rows`** — one object per expected row, keyed by the read model's field names. Without this the scenario has no expected output and is unverifiable.
+
+**`expectEmptyList: true`** — when the expected result is an empty list (e.g. after a delete). Do not leave `rows: []` without this flag — an empty array alone is ambiguous ("no data provided yet" vs. "intentionally empty").
+
+Both are accepted only when `then` is exactly that one list read model, and they exclude each other. Rows with a key that is not one of its fields are refused. `rows: []` or `expectEmptyList: false` clears a stored outcome. `get_slice_view` and `get_cell_view` return them with the scenario.
+
+Non-empty list scenario:
+```
 set_scenario {
-  scenario: "Products list is empty after the last item is deleted",
-  given: ["Product Deleted"],
-  then: ["Product List"],
-  expectEmptyList: true
+  "scenario": "Products list shows created items",
+  "cell": "<specification cell>",
+  "given": ["Product Created"],
+  "when": [],
+  "then": ["Product List"],
+  "rows": [
+    { "name": "Shoes",    "index": "0", "family_id": "22222..." },
+    { "name": "Clothing", "index": "1", "family_id": "33333..." }
+  ]
+}
+```
+
+Empty list scenario:
+```
+set_scenario {
+  "scenario": "No products remain after deletion",
+  "cell": "<specification cell>",
+  "given": ["Product Deleted"],
+  "when": [],
+  "then": ["Product List"],
+  "expectEmptyList": true
 }
 ```
 
 ### Step 4c — Error/rejection scenarios
 
-When a scenario represents a command being **rejected** (validation failure, state violation, or business rule rejection), the outcome is an **error entry** in `then`:
+When a scenario represents a command being **rejected** (validation failure, state violation, or business rule rejection), the outcome is an **error entry** in `then`: `{ "errorType": "...", "errorMessage": "..." }`.
 
+**`errorMessage`** — a short human-readable description of the expected error or rejection reason (e.g. `"reservation date is in the past"`, `"reservation already confirmed"`). Do not leave this empty. `errorType` is a short name for the same rule.
+
+When `then` is an error entry:
+- `then` is that error entry alone — no events are produced on rejection
+- `when` contains the COMMAND being rejected
+- `given` contains any prerequisite EVENTs needed to establish the wrong state (may be empty for an input the business refuses)
+- Do **not** set `expectEmptyList` — that flag is only for list READMODELs
+
+Rejection scenario example:
 ```
 set_scenario {
-  scenario: "Reject a reservation for a date in the past",
-  given: [],
-  when: [{ element: "Reservation Command", fieldValues: { reservationId: "r-123", date: "2026-10-12" } }],
-  then: [{ errorType: "ReservationDateInPast", errorMessage: "reservation date is in the past" }]
+  "scenario": "Reject a reservation for a date in the past",
+  "cell": "<specification cell>",
+  "given": [],
+  "when": [{ "element": "Reservation Command",
+             "fieldValues": { "reservationId": "r-123", "date": "2026-10-12" } }],
+  "then": [{ "errorType": "ReservationDateInPast", "errorMessage": "reservation date is in the past" }]
 }
 ```
 
-- `errorMessage` is the short human-readable reason for the rejection (e.g. `"reservation date is in the past"`, `"reservation already confirmed"`). Never leave it empty. `errorType` is a short name for the same rule.
-- When the scenario is a rejection, `then` is that error entry alone — no events are produced on rejection. Don't add outcomes next to it.
-- `when` contains the COMMAND being rejected.
-- `given` contains any prerequisite EVENTs needed to establish the wrong state (may be empty for an input the business refuses).
-- An empty-list expectation is only for list READMODELs; never combine it with a rejection.
-
 State-violation rejection (given events establish the wrong state):
-
 ```
 set_scenario {
-  scenario: "Reject confirming an already-confirmed reservation",
-  given: [{ element: "Reservation Confirmed", fieldValues: { reservationId: "r-123", confirmedAt: "2026-10-12" } }],
-  when: [{ element: "Confirm Reservation", fieldValues: { reservationId: "r-123" } }],
-  then: [{ errorType: "ReservationAlreadyConfirmed", errorMessage: "reservation already confirmed" }]
+  "scenario": "Reject confirming an already-confirmed reservation",
+  "cell": "<specification cell>",
+  "given": [{ "element": "Reservation Confirmed",
+              "fieldValues": { "reservationId": "r-123", "confirmedAt": "2026-10-12" } }],
+  "when": [{ "element": "Confirm Reservation", "fieldValues": { "reservationId": "r-123" } }],
+  "then": [{ "errorType": "ReservationAlreadyConfirmed", "errorMessage": "reservation already confirmed" }]
 }
 ```
 
@@ -452,30 +512,27 @@ For a read model the decision rule sends to a storyline, write it with `storylin
 
 ```
 set_scenario {
-  scenario: "A welcome notification is sent once",
-  cell: "C5",
-  storyline: [
-    { element: "Notifications To Send", expectEmptyList: true },
-    { element: "Customer Registered", fieldValues: { customerId: "c-7", email: "maja@example.com" } },
-    { element: "Notifications To Send", rows: [{ customerId: "c-7", email: "maja@example.com" }] },
-    { element: "Notification Sent", fieldValues: { customerId: "c-7" } },
-    { element: "Notifications To Send", expectEmptyList: true }
+  "scenario": "A welcome notification is sent once",
+  "cell": "C5",
+  "storyline": [
+    { "element": "Notifications To Send", "expectEmptyList": true },
+    { "element": "Customer Registered", "fieldValues": { "customerId": "c-7", "email": "maja@example.com" } },
+    { "element": "Notifications To Send", "rows": [{ "customerId": "c-7", "email": "maja@example.com" }] },
+    { "element": "Notification Sent", "fieldValues": { "customerId": "c-7" } },
+    { "element": "Notifications To Send", "expectEmptyList": true }
   ]
 }
 ```
 
-- Reuse the ids across beats (the same `customerId` in the opening event, the row and the closing event): that is what shows the row belongs to that event and leaves with the other.
-- Walk the lifecycle once, with the events that really move the read model. A second item opened before the first closes is worth a beat when the read model's behaviour depends on it (two rows at once); otherwise one item is the clearer story.
 - `storyline` replaces all beats. A storyline is never mixed with `given`/`when`/`then`, and a Given/When/Then case beside it is its own scenario in the same cell.
-- A GWT that only restates one step of the storyline (a row appearing after the opening event, the list emptying after the closing one) adds nothing: don't write it, and remove one that exists. Keep the GWTs for what the storyline does not walk through.
 - `check_model` reports `todo-list-without-storyline` for a todo-list read model (one that feeds an automation) with no storyline: every todo list gets one.
 
 ### Step 5 — Verify and report back
 
 Run `check_model`. For scenarios it reports `slice-without-scenario` (a slice that changes state but has none), `no-error-scenario` (only happy paths — consider a rejection), `scenario-missing-ref` (a step pointing at an element that no longer exists), `scenario-on-linked-copy` (a scenario that names a linked copy as its command or read model, or sits in a column whose only command or read model is a copy), `linked-copy-unwired` (a copy wired to nothing, typically placed only so a step could name it: remove it, and its slice if that leaves it empty; the step already names the original), `scenario-without-examples` (a scenario whose steps only name elements, or a storyline read-model beat that says nothing about its state), `storyline-shape` (a storyline with no beats, or ending on an event), `todo-list-without-storyline`, and the step-shape codes above. It does not check that every read model has a view scenario, that the values are the *essential* ones, or that each scenario sits in its subject's own slice: check those by hand from the Quality Checklist. Fix what it flags, then tell the user:
-- How many scenarios were put on the sheet (per command/view)
-- Anything you could not express or reference, and why
-- The cell address of each specification cell you filled
+- How many scenarios were posted successfully (per command/view)
+- Any scenarios skipped because a step could not be resolved
+- The cell address of each specification cell filled
 
 To rate how much of each slice's behaviour the scenarios now specify, and see which meaningful cases are still missing, run `eventmodeling-assessing-scenario-coverage`; it stores the result on each slice. Its `missing` cases are the next scenarios to write. For realistic values across many fields, see `eventmodeling-adding-examples`.
 
@@ -495,21 +552,22 @@ To rate how much of each slice's behaviour the scenarios now specify, and see wh
 **No command has only 2 scenarios unless all other types were reviewed and found inapplicable.**
 
 **Per read model — this is a separate, equally mandatory pass, not an afterthought of the command pass above:**
-- [ ] **Essential example values filled (blocking — no exceptions)** — every value the rule decides on, the ids linking the steps and the asserted outcome carry a concrete example on their step; every other field left empty, so it is clear which data is relevant; a scenario whose values only appear in its description is not done
-- [ ] **Notes carry nothing an element could** — every scenario `contextNote`, description and note beat holds only background no event, command field or read model can express; anything else is moved into `given`/`when`/`then` and the note removed
-- [ ] **Every READMODEL on the sheet has at least one view scenario** — GWT (`given`: source EVENTs, `when`: empty or one QUERY, `then`: the READMODEL) or a storyline. A model with dozens of command scenarios and 0 read-model scenarios is not a complete Step 7 — it's easy to walk away thinking coverage is thorough because the command side looks exhaustive, so check the read-model side explicitly before reporting this step done. (`check_model` does not check this: compare the read models on the sheet with the view scenarios.)
+- [ ] **Essential example values filled (blocking — no exceptions)** — every value the rule decides on, the ids linking the steps and the asserted outcome carry a concrete value in `fieldValues` on their step; every other field left empty, so it is clear which data is relevant; a scenario whose values only appear in its note is not done
+- [ ] **Notes carry nothing an element could** — every `contextNote` and note beat holds only background no event, command field or read model can express; anything else is moved into `given`/`when`/`then` and the note removed
+- [ ] **Every READMODEL on the sheet has at least one view scenario** — GWT (`given`: source EVENTs, `when`: empty, `then`: the READMODEL) or a storyline. A model with dozens of command scenarios and 0 read-model scenarios is not a complete Step 7 — it's easy to walk away thinking coverage is thorough because the command side looks exhaustive, so check the read-model side explicitly before reporting this step done. (`check_model` does not check this: compare the read models on the sheet with the view scenarios.)
 - [ ] **Population scenario** — the view shows correct data after its source event(s)
-- [ ] **Removal/update scenario, where applicable** — a row disappears or changes (an empty list, for list-type views) after an event that supersedes it (expiry, return, archival, withdrawal, status change, etc.). A later event connecting back to an earlier-placed todo-list read model is normal for that accumulator shape (the read model already feeds an AUTOMATION), so add the connection if it's missing rather than assuming the scenario is impossible. If the read model has no automation to feed, a backward connection is not allowed — by Step 5 this should already have been modeled the forward way (see `eventmodeling-identifying-outputs`: a new read model + screen copy in the later event's column, never a link back). If it wasn't, write the scenario against that forward-placed copy's original. When the superseding event lives on a different sheet, name it there in the `given` (`Sheet!B3.1`).
+- [ ] **Removal/update scenario, where applicable** — a row disappears or changes (`expectEmptyList: true` for list-type views) after an event that supersedes it (expiry, return, archival, withdrawal, status change, etc.). `EVENT → READMODEL` is exempt from column ordering **only when the read model already feeds an AUTOMATION** (`READMODEL → AUTOMATION` flow; `check_model` exempts that closing event from `flow-backward`; see `eventmodeling-orchestrating-event-modeling`'s "No backward arrows") — a later event connecting back to an earlier-placed todo-list read model is normal for that accumulator shape, so add the flow (`create_flow`) if it's missing rather than assuming the scenario is impossible. If the read model has no automation to feed, the backward connection is reported as `flow-backward` — by Step 5 this should already have been modeled the forward way (see `eventmodeling-identifying-outputs` Step 5g's copy pattern: a new read model + screen copy in the later event's column, never a link back). If it wasn't, write the scenario against that forward-placed copy (a copy carries no fields of its own here, so the step is stored against its original). Only skip this scenario, with a documented gap (`set_note`), when the superseding event genuinely lives on a different sheet and can't be named there.
 - [ ] **GWT vs. storyline decided per read model, not applied uniformly** — apply the decision test from "GWT vs. Storyline — Decision Rule" above to each read model individually; some may qualify for a storyline while the rest of the same model are correctly GWT-only. Don't default to one format for every read model just because it worked for the first one.
 - [ ] **No redundancy or contradiction between a read model's GWT scenarios and its storyline** — if both exist for the same read model, read the storyline's beats before finalizing the GWTs. A GWT that asserts the same state a beat already shows is redundant (delete it); a GWT written without tracing the same causal sequence the storyline encodes can end up asserting something the storyline's beats actually contradict (e.g. claiming two entities coexist in a view when the storyline correctly shows one superseding the other) — delete or fix it, never leave a contradiction on the sheet.
-- [ ] **Cross-sheet sources named where they live** — if a step's true source event (a command's prior state, a read model's source) lives on a different sheet, the step names it on that sheet (`Sheet!B3.1`), rather than omitting the scenario, leaving `given` empty, fabricating a same-sheet event that isn't the real source, or placing a linked copy only so the step can name it (`check_model` reports such a copy as `linked-copy-unwired`)
+- [ ] **Cross-sheet read models handled honestly** — if a read model's true source events live on a different sheet, `given` names them there (`Sheet!B3.1`), rather than silently omitting the scenario, leaving `given` empty, fabricating a same-sheet event that isn't the real source, or placing a linked copy only so the step can name it (`check_model` reports such a copy as `linked-copy-unwired`)
 
-**Format and placement:**
+**Format and posting:**
 - [ ] State preconditions are explicit in Given (not just "Given an order")
 - [ ] Actions are clear in When
 - [ ] Outcomes are verifiable in Then (event produced or rejection with reason)
+- [ ] All scenarios posted to the sheet's specification-lane cells with `set_scenario`
 - [ ] Every scenario sits in the specification-lane cell of its subject's original column (never a linked copy's)
-- [ ] **Workshop facilitation approach documented** (when the scenarios were made in a session with the human)
+- [ ] **Workshop facilitation approach documented**
 - [ ] **All stakeholder roles (PO, Dev, QA, Domain Expert) perspectives captured**
 - [ ] **Edge cases suggested by participants captured**
 - [ ] **Why behind business rules documented (not just the what)**

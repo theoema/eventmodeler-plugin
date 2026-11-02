@@ -1,6 +1,6 @@
-# Brainstorming Events: Worked Examples
+# Brainstorming Events — Worked Examples
 
-These are conceptual worked examples of the reasoning this skill applies. They are useful for understanding the shape of a complete answer, but the actual mechanics are the numbered Workflow steps and sheet-placement rules in the main SKILL.md.
+These are conceptual worked examples of the reasoning this skill applies — useful for understanding the shape of a complete answer, but the actual mechanics are the numbered Workflow steps and sheet-placement rules in the main SKILL.md.
 
 ## Role Catalog (E-commerce domain)
 

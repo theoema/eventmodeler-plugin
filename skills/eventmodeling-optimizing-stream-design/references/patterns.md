@@ -1,7 +1,5 @@
 # Timeline Boundary Design Patterns
 
-A timeline here is one entity's own event stream — the events in one swimlane lane, the lane named for that entity.
-
 ## Contents
 - Entity Boundary Design Patterns (5 patterns with examples)
 - Timeline Boundary Decision Tree
@@ -43,15 +41,15 @@ Entity: Order
 Root Identity: orderId (e.g., 'order-456')
 
 Contains related children (same lifetime):
-  - Order Lines: 3 items
+  - OrderLines: 3 items
     * Line 1: productId=prod-A, qty=2, price=$50
     * Line 2: productId=prod-B, qty=1, price=$100
     * Line 3: productId=prod-C, qty=5, price=$10
 
-  - Shipping Address:
+  - ShippingAddress:
     street: 123 Main St, City: Portland, State: OR
 
-  - Payment Info:
+  - PaymentInfo:
     method: credit_card, amount: $400
 
 Events in timeline:
@@ -92,7 +90,7 @@ Problems with this approach:
 Solution: Use a projection/read model query instead, not an entity
   - Query: "All Orders By Customer" (customer-id)
   - Query: "Orders By Status" (status)
-  - Built from the individual Order timelines on demand
+  - Rebuild from individual Order timelines on-demand
 ```
 
 ---
@@ -170,9 +168,9 @@ Does your timeline have a natural business identity?
     SOLUTION: Use a read model/projection, not an entity
 
  YES → Does every event in the timeline belong to that one entity's lifecycle?
-
+   
     YES → GOOD: Boundary is correctly scoped to one identity
-
+   
     NO → The boundary is too wide — it's absorbing events that
          belong to a different entity or a different concern
         REDESIGN: Split by the entity each event actually concerns

@@ -48,7 +48,7 @@ Reason: Clear contracts between steps enable parallel work
 
 ### Why the Flat Curve?
 
-The core claim:
+The article explains:
 
 > "The biggest impact of using Event Modeling is the flat cost curve of the average feature cost. This is due to the fact that the effort of building each workflow step is not impacted by the development of other workflows."
 
@@ -56,17 +56,17 @@ The core claim:
 
 ```
 Team A builds Step 1 (Create Order)
-  - Produces: OrderCreated event with specific fields
-  - Contract: "If OrderCreated exists, these fields are guaranteed"
+  - Produces: Order Created event with specific fields
+  - Contract: "If Order Created exists, these fields are guaranteed"
 
 Team B builds Step 2 (Confirm Order)
-  - Precondition: OrderCreated event exists
+  - Precondition: Order Created event exists
   - Can start IMMEDIATELY while Team A finishes
-  - Mocks OrderCreated event in tests
+  - Mocks Order Created event in tests
   - When Step 1 ready, tests pass immediately
 
 Team C builds Step 3 (Authorize Payment)
-  - Precondition: OrderConfirmed event exists
+  - Precondition: Order Confirmed event exists
   - Can start immediately
   - Works independently
 
@@ -86,9 +86,9 @@ Definition: Velocity = Number of workflow steps completed per sprint
 
 Example Sprint:
 Week 1:
-    Team A: Completed CreateOrder command (1 step)
-    Team B: Completed ConfirmOrder command (1 step)
-    Team C: Completed AuthorizePayment processor (1 step)
+    Team A: Completed Create Order command (1 step)
+    Team B: Completed Confirm Order command (1 step)
+    Team C: Completed Authorize Payment processor (1 step)
 
 Velocity: 3 workflow steps per sprint
 
@@ -229,8 +229,8 @@ Simple workflow step (read model): 0.5 weeks, 1 developer
 
 Velocity calculation (realistic):
 Sprint 1:
-    - CreateOrder (typical): 1 step
-    - ComplexPaymentValidation (complex): 0.5 steps
+    - Create Order (typical): 1 step
+    - Complex Payment Validation (complex): 0.5 steps
     - Notifications (simple): 1 step
     → Velocity: 2.5 steps/sprint
 
@@ -311,10 +311,6 @@ Sprint 4 velocity: 3.0 (added new junior developer, slower)
 Trend: Improving as team gets comfortable (minus new hires)
 ```
 
-## Reading the Count Off the Sheet
-
-A workflow step is a slice. The count is on the sheet, not in anyone's head: `get_model_view` lists every slice with its status, and each COMMAND, READMODEL and AUTOMATION implies exactly one (a linked copy implies none). Estimate a project by counting slices, and track a sprint by moving slices through their status (`update_slice`: `planned`, `in-progress`, `blocked`, `done`). Dependencies between steps are the flows and the column order: a slice's Given is the events produced by the slices to its left.
-
 ## Key Metrics
 
 | Metric | Calculation | What It Tells You |
@@ -337,3 +333,13 @@ Estimate → [Usually accurate] → Deliver on time
 Traditional accuracy: ±50% (at best)
 Event Modeling accuracy: ±10% (with historical data)
 ```
+
+## Reading the Count Off the Sheet
+
+A workflow step is a slice. The count is on the sheet, not in anyone's head: `get_model_view` lists every slice with its status, and each COMMAND, READMODEL and AUTOMATION implies exactly one (a linked copy implies none). Estimate a project by counting slices, and track a sprint by moving slices through their status (`update_slice`: `planned`, `in-progress`, `blocked`, `done`). Dependencies between steps are the flows and the column order: a slice's Given is the events produced by the slices to its left.
+
+## Further Reading
+
+- Article section: "Flat Cost Curve"
+- Article section: "Estimates without Estimating"
+- Article section: "Strong Contracts"

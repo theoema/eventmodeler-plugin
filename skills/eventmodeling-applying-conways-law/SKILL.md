@@ -5,9 +5,9 @@ description: "Step 6 of Event Modeling - Apply Conway's Law with swimlanes. Orga
 
 # Applying Conway's Law
 
-This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. The tool mechanics every step shares (addressing, lanes, notes) are in `eventmodeling-core-rules`' `../eventmodeling-core-rules/references/tools.md`.
+> EventModeler is already connected: there is nothing to log in to and no token to resolve. Consult [tools.md](../eventmodeling-core-rules/references/tools.md) only if you need to look up a specific tool this file doesn't cover — don't load it eagerly.
 
-Every tool call takes the `modelId`, and a `sheet` when the model has more than one.
+This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 
 ## Interview Phase (Optional)
 
@@ -40,7 +40,7 @@ An answer the user cannot give yet is an open question, not something to guess: 
 
 Given all events, inputs, and outputs, organize by ownership:
 
-> **This step's "swimlane" is the same boundary `eventmodeling-brainstorming-events` governs, described from the ownership angle instead of the sheet-mechanics angle.** That skill's Swimlane Rules restrict the sheet's actual `swimlane`-kind lane to marking integration with another system — this step doesn't loosen that cap or add a lane per team. Under Conway's Law, "team" and "system" name the same boundary: a system this chapter's process integrates with is, by definition, owned by some other team. The diagrams below are a narrative/analysis device for documenting *who owns what* across those boundaries — not an instruction to create one swimlane lane per team named here. Where a handover to another system's lane already exists, name that lane for the system (`update_lane`) and record who owns it in a note on the lane (`set_note`, target = the lane's row number); where the other team's own story runs for more than a handover, it belongs on a sheet of its own (`create_sheet`). That sheet picks up the handover with a linked copy of the event it starts from (`copy_element`), or an external event and its translation chain, not with a `connect_sheets` connector.
+> **This step's "swimlane" is the same boundary `eventmodeling-brainstorming-events` governs, described from the ownership angle instead of the sheet-mechanics angle.** That skill's Swimlane Rules restrict the sheet's actual `swimlane`-type lane to marking integration with another system — this step doesn't loosen that cap or add a lane per team. Under Conway's Law, "team" and "system" name the same boundary: a system this sheet's process integrates with is, by definition, owned by some other team. The diagrams below are a narrative/analysis device for documenting *who owns what* across those boundaries — not an instruction to create one swimlane lane per team named here. Where a handover to another system's lane already exists, name that lane for the system (`update_lane`) and record who owns it in a note on the lane (`set_note`, target = the lane's row number); where the other team's own story runs for more than a handover, it belongs on a sheet of its own (`create_sheet`). That sheet picks up the handover with a linked copy of the event it starts from (`copy_element`), or an external event and its translation chain (`eventmodeling-designing-automation-chains`), not with a `connect_sheets` connector.
 
 ### 1. Identify System Boundaries
 Determine what constitutes a separate system/bounded context: for each candidate system, name what it owns, list the events it produces, and note the state machine it's responsible for. A full worked example (Order/Payment/Inventory/Fulfillment domain) is in `references/examples.md`.
@@ -52,19 +52,19 @@ Lay the events out on a timeline with one row per team, showing which events eac
 For each team, define: the commands they handle, the events they produce, the read models they maintain, and the other systems they call or depend on. A full worked example (Order/Payment/Inventory/Fulfillment teams) is in `references/examples.md`.
 
 ### 4. Identify Inter-System Communication
-For each pair of systems that interact, document the triggering event, what the consuming system does in reaction (which command it issues), and the event that results. A system never reacts to another system's event directly: every crossing enters through a translation chain (`eventmodeling-designing-automation-chains`, Step 4b) — the other system's event opens the todo list of a translation automation, whose command records the internal event the consuming system actually works with. Document each crossing as that chain. Conway's Law only confirms the boundary; if the chain isn't on the sheet yet, add it now rather than documenting a direct reaction. A full worked example is in `references/examples.md`.
+For each pair of systems that interact, document the triggering event, what the consuming system does in reaction (which command it issues), and the event that results. A full worked example is in `references/examples.md`.
 
 ### 5. Define System Interfaces
 For each system, list the commands it accepts (and from where — UI, another system, a processor) and the events/read models it produces or provides to others. A full worked example is in `references/examples.md`.
 
 ### 6. Identify Processors vs Systems
-For each autonomous processor/automation, document what triggers it (the internal events that open its todo list — never another system's event directly), its logic, the command(s) it produces, and which system it lives in. A full worked example (Payment/Inventory/Fulfillment/Notification processors) is in `references/examples.md`.
+For each autonomous processor/automation, document what triggers it, its logic, the command(s) it produces, and which system it lives in. A full worked example (Payment/Inventory/Fulfillment/Notification processors) is in `references/examples.md`.
 
 ## Output Format
 
-Present the analysis as a markdown document titled "System Organization: [Domain Name]" with these sections: **System Boundaries** (one entry per system, giving its owning team, responsibilities, commands, events produced/consumed, read models, dependencies, and scope); **Event Flow Across System Boundaries** (a time-ordered diagram showing which system's events trigger the next system downstream); a **Team Responsibilities Matrix** (one row per team: commands, events, read models); **Inter-System Communication** (one entry per system pair: triggering event, the translation chain that receives it, resulting command); a **Dependencies** table of external systems (what they're called for); and a closing **Independent Development** note on how the boundaries let each team build, scale, and deploy independently, coordinating only via events, processors, and shared read models. A full worked example of this document (Order/Payment/Inventory/Fulfillment domain) is in `references/examples.md`.
+Present the analysis as a markdown document titled "System Organization: [Domain Name]" with these sections: **System Boundaries** (one entry per system, giving its owning team, responsibilities, commands, events produced/consumed, read models, dependencies, and scope); **Event Flow Across System Boundaries** (a time-ordered diagram showing which system's events trigger the next system downstream); a **Team Responsibilities Matrix** (one row per team: commands, events, read models); **Inter-System Communication** (one entry per system pair: triggering event, reacting system/action, resulting command); a **Dependencies** table of external systems (what they're called for); and a closing **Independent Development** note on how the boundaries let each team build, scale, and deploy independently, coordinating only via events, processors, and shared read models. A full worked example of this document (Order/Payment/Inventory/Fulfillment domain) is in `references/examples.md`.
 
-Give it to the user in your reply. What must outlive the conversation goes on the sheet: the other systems' lanes named for them, a `set_note` on each such lane naming the owning team and what it owns, and any finding about a boundary (a circular dependency, a crossing with no translation chain) as a note on the cell or column where it shows, or a pin if it needs an answer.
+Give it to the user in your reply. What must outlive the conversation goes on the sheet: the other systems' lanes named for them, a `set_note` on each such lane naming the owning team and what it owns, and any finding about a boundary (a circular dependency, for example) as a note on the cell or column where it shows, or a pin if it needs an answer.
 
 ## Quality Checklist
 
@@ -73,7 +73,6 @@ Give it to the user in your reply. What must outlive the conversation goes on th
 - [ ] Events map to systems
 - [ ] Commands map to teams
 - [ ] Cross-system communication is documented
-- [ ] Every cross-system trigger enters through a translation chain — no automation reacts to another system's event directly
 - [ ] No circular dependencies
 - [ ] Each team has independent scope
 - [ ] Processors are explicitly assigned

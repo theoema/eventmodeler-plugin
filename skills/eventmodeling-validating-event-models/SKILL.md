@@ -1,39 +1,36 @@
 ---
 name: eventmodeling-validating-event-models
-description: "Step 9 of Event Modeling - Validate the model for completeness and consistency. Ensures events are immutable facts, read models are deterministic projections, and commands are traceable decisions. Identifies gaps before the model is declared done. Use when reviewing a model before it's considered final. Do not use for: the structured checklist walk (use eventmodeling-validating-event-models-checklist) or field-level completeness verification (use eventmodeling-checking-completeness)."
+description: "Step 9 of Event Modeling - Validate the model for completeness and consistency. Ensures events are immutable facts, read models are deterministic projections, and commands are traceable decisions. Identifies gaps before the model is declared done. Use when reviewing a model before it's considered final. Do not use for: the structured 14-check checklist (use eventmodeling-validating-event-models-checklist) or field-level completeness verification (use eventmodeling-checking-completeness)."
 ---
 
 # Validating Event Models
 
-This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. Tool names and conventions are in `eventmodeling-core-rules` → `../eventmodeling-core-rules/references/tools.md`.
+This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. Its `../eventmodeling-core-rules/references/tools.md` maps the vocabulary below to this server's tools.
 
-You are in **Critic Mode**: apply every rule strictly, surface every violation, gap and inconsistency — don't soften a finding because the model "mostly works."
-
-For validation you treat the event model as read only. The only things you are allowed to change are notes and pins — see "Recording Findings". For critical questions, leave a pin on the cells concerned.
+For validation you treat the Event Model as read only. The only things you are allowed to change are notes and pins.
+For critical questions, leave a pin (`create_pin`) on the cells concerned.
 
 For every field in the command, it must be clear where it is coming from.
-Either it's defined in a transitively connected Read Model, or it is marked as "generated" in either a screen or an automation (`isGenerated`; a value typed on a screen is `isUserInput`).
+Either it´s defined in a transitively connected Read Model, or it is marked as "generated" (`isGenerated`; a value typed on a screen is `isUserInput`) in either a screen or an automation.
 There should not be any fields without a defined source.
 
 The source can be also determined by looking at the defined Scenarios. Are all Scenarios covered?
 
 ## Model Context
 
-Before starting, read the current model state to validate what is actually there — don't rely on conversation memory:
+Before starting, read the current model state to validate what is actually on the model.
 
-- `check_model` — the mechanical pass, see step 0. Run it first.
-- `get_model_view` — the sheets and their slices.
-- `get_sheet_view` — one sheet's grid: lanes with their kinds, every element by cell address, flows, scenario titles. Names, tense and duplicates need nothing more than this.
-- `get_slice_view` — one slice in full: elements with fields, flows with field mappings, scenario bodies. Use it for field-source traceability and scenario coverage.
-- `get_cell_view` — one cell at full detail, including its note.
-- `render_sheet` — an image of the sheet when the layout matters.
+Pick the read by what each check needs:
 
-## Recording Findings
+- **Naming, past tense, duplicates** — only names and types are needed, so read each sheet once with `get_sheet_view` (element names and types per cell, with the lanes and flows). **Attribute names** need `get_slice_view`, which returns the elements with their fields. `get_model_view` lists the sheets and slices.
 
-Critic Mode: do not fix what you find; record it.
-- A finding → `set_note` on the cell that holds the element (a note attaches to a cell, a slice (column) or a lane (row), never to an element itself; a cell holds one element, so the cell is the element). `set_note` replaces the whole note: read the current one first (`get_cell_view`, `get_slice_view`) and append. Start each finding with its kind — `TASK:` for a critical violation that must be fixed, `COMMENT:` for warnings and recommendations — and name the element.
-- A question only the human can answer → `create_pin` on the cells concerned, worded as a question. It stays open until answered. A decided failure is never a question — it is a scenario with an error outcome (`eventmodeling-elaborating-scenarios`).
-- Findings about a whole slice go on the slice (`set_note` with the column letter or slice name); about a lane, on the row number.
+- **Field-source traceability** (every command field comes from a connected read model or is marked generated) — needs field bodies and dependencies, so use `get_slice_view` per slice (elements with fields, flows with field mappings). `trace_field` follows one field upstream to where it starts and reports whether its origin is user input, generated, or `unsourced`.
+
+- **Scenario coverage** — `get_slice_view` also returns the scenario bodies (given/when/then) of the slice, and the slice's recorded scenario coverage.
+
+- **One cell, or one element, in full** — `get_cell_view` (including the cell's note and its slice and lane notes). **The layout, when it matters** — `render_sheet` gives an image of the sheet.
+
+After validation, post the findings on the relevant elements — `TASK` for critical violations that must be fixed, `COMMENT` for warnings and recommendations. A finding is a note: `set_note` on the cell that holds the element (a note attaches to a cell, a slice or a lane, never to an element itself). `set_note` replaces the whole note, so read the current one first (`get_cell_view`, `get_slice_view`) and append. Start each finding with `TASK:` or `COMMENT:` and name the element. Findings about a whole slice go on the slice (`set_note` with the column letter or slice name). A question only the human can answer is a pin (`create_pin`) on the cells concerned, worded as a question. A decided failure is never a question — it is a scenario with an error outcome (`eventmodeling-elaborating-scenarios`).
 
 ## Purpose
 
@@ -45,34 +42,36 @@ When given an event model, perform comprehensive validation:
 
 ### 0. Automated structural pass — run `check_model` first
 
-Before the manual checks below, run the linter (once per sheet with `sheet`, or for the whole model):
+Before the manual checks below, run the structural checklist once per sheet (pass `sheet`, or omit it for the whole model):
 
 ```
-check_model
+check_model { sheet: "<sheet name>" }
 ```
 
-It returns a flat `findings` list (errors first; each with a stable `check` code, the sheet, the target and a message) covering:
+It returns a compact `findings` list (no element dumps; errors first, each with a stable `check` code, the sheet and the target) covering: backward arrows (`flow-backward`, with the todo-list `EVENT → READMODEL` exception already applied), COMMANDs with zero or multiple issuers (`command-without-issuer`, `command-multiple-issuers`), READMODELs with no inbound EVENT (`read-model-without-source`), and command slices with no Given/When/Then scenario (`slice-without-scenario`; read-model slices are not flagged). Unplaced nodes cannot exist here — every element lives in a cell — and columns with more than one screen are not reported, so check those by hand from `get_sheet_view`. This replaces the per-type scans and the edge spot-checks those manual checks would otherwise need — start from its `findings`, then use the sections below for the semantic checks it can't make (naming, immutability, field-source traceability, scenario coverage depth). An empty `findings` list from `check_model` is necessary but not sufficient — still do the semantic pass.
+
+The full set it reports:
 
 | Area | `check_model` reports |
 |---|---|
 | Wiring | `command-without-event`, `command-without-issuer`, `command-multiple-issuers`, `screen-multiple-commands`, `automation-without-todo-list`, `screen-disconnected`, `screen-mark-unanchored`, `event-disconnected`, `event-without-command`, `orphan-element`, `linked-copy-unwired`, `dangling-flow` |
-| Direction and layout | `flow-backward`, `column-multiple-events`, `sheet-starts-with-command`, `state-change-without-trigger`, `external-event-direct` |
+| Direction and layout | `flow-backward`, `column-multiple-events`, `sheet-starts-with-command`, `state-change-without-trigger`, `external-event-direct`, `sheets-overlap` |
 | Read models | `read-model-without-source`, `read-model-unconsumed` |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` |
 | Field sources | `untraceable-field`, `unsourced-fields`, `pii-mismatch` |
-| Scenarios | `slice-without-scenario`, `no-error-scenario`, `scenario-missing-ref`, `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy` |
+| Scenarios | `slice-without-scenario`, `no-error-scenario`, `scenario-missing-ref`, `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy`, `scenario-without-examples`, `storyline-shape`, `todo-list-without-storyline` |
 | Slices | `empty-slice`, `slice-mixed-shape` |
 | Candidates, worth a look rather than violations | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (info) |
 
 Errors are the method's hard rules (one issuer per command, flows that read forward, one event per column, one subject per slice, a todo list per automation); warnings are almost certainly a mistake; info is a prompt to look. Linked copies resolve to their originals, so a copy is never reported as a duplicate, a second issuer or a slice of its own.
 
-This replaces the per-type scans and edge spot-checks the manual checks would otherwise need — start from its `findings`, then use the sections below for the semantic checks it can't make (is each name a true domain fact, immutability, whether read models are deterministic, scenario coverage depth). A clean `check_model` is necessary but not sufficient — still do the semantic pass.
-
-Not checked by `check_model`; do these by hand from `get_sheet_view`: a command named like a query (`Load Orders`) and an event named for the UI, machinery or a calculation (`Button Clicked`, `Total Calculated`), a generic "User" actor lane, two screens in one column, same-named elements that are not linked copies (except screens: same-named screens are the instances of one page, Step 5c of `eventmodeling-identifying-outputs`, so judge them by whether each marks a different component), a read model with no view scenario, a scenario's examples and the slice it sits in, and slice names and statuses. An event with no producing command (`event-without-command`) is expected when it is another system's fact in a second swimlane lane, so judge it by its lane.
+Not checked by `check_model`; do these by hand from `get_sheet_view`: a command named like a query (`Load Orders`) and an event named for the UI, machinery or a calculation (`Button Clicked`, `Total Calculated`), a generic "User" actor lane, same-named elements that are not linked copies (except screens: same-named screens are the instances of one page, Step 5c of `eventmodeling-identifying-outputs`, so judge them by whether each marks a different component), a read model with no view scenario, whether a scenario's example values make business sense and the slice it sits in, and slice names and statuses. An event with no producing command (`event-without-command`) is expected when it is another system's fact in a second swimlane lane, so judge it by its lane.
 
 ### 1. Entity/Timeline Completeness Check
 
-An entity's timeline here is its own event stream: the events in one swimlane lane (the lane named for the entity). Verify each entity's timeline has:
+An entity's timeline here is its own event stream: the events in one swimlane lane (the lane named for the entity).
+
+Verify each entity's timeline has:
 - Clear name (identity)
 - At least one event type
 - An initial event (what starts the entity's story)
@@ -96,7 +95,7 @@ An entity's timeline here is its own event stream: the events in one swimlane la
 ### 2. Consistency Checks
 
 - [ ] **Event-Entity Mapping**: Every event belongs to exactly one lane/entity (`check_model` does not compare names: look for the same fact modeled twice without a link)
-- [ ] **Single Command Issuer**: Every command is issued by exactly one SCREEN or AUTOMATION — never two. Check each COMMAND's inbound flows; more than one SCREEN/AUTOMATION wired into the same command is a CRITICAL violation (commonly a wiring artifact). `check_model` reports `command-multiple-issuers` and `command-without-issuer`
+- [ ] **Single Command Issuer**: Every command is issued by exactly one SCREEN or AUTOMATION — never two. Check each COMMAND's inbound flows; more than one SCREEN/AUTOMATION wired into the same command is a CRITICAL violation (commonly a wiring artifact; `check_model` reports it as `command-multiple-issuers`, and a command with no issuer at all as `command-without-issuer`)
 - [ ] **Command Outcomes**: Every command produces events OR documents a rejection (`command-without-event` for the former; the rejection is a scenario with an error outcome)
 - [ ] **Deterministic Read Models**: A read model can only be derived one way from its events
 - [ ] **Event Immutability**: No event data is ever modified
@@ -107,17 +106,17 @@ An entity's timeline here is its own event stream: the events in one swimlane la
 ### 3. Event Modeling Principles Compliance
 
 - [ ] **Events are Facts**: describe what happened, not potential futures
-  - "Order May Be Confirmed" → "Order Confirmed"
-  - "Payment Pending" (as an event) → "Payment Initiated", "Payment Authorized"
+  - "Order May Be Confirmed" →  "Order Confirmed"
+  - "Payment Pending" (as an event) →  "Payment Initiated", "Payment Authorized"
 
 - [ ] **Events are Immutable**: no modification of event data
-  - "Update Order Created event with new total" → "Append Order Total Corrected event"
+  - "Update Order Created event with new total" →  "Append Order Total Corrected event"
 
 - [ ] **Complete Event Data**: events contain all facts a read model needs to project them
-  - Event "Order Confirmed" missing paymentId → Event includes paymentId
+  - Event "Order Confirmed" missing paymentId →  Event includes paymentId
 
 - [ ] **No Computed Fields in Events**: only raw captured facts
-  - Order Created includes "totalTax" (computed) → Includes items + amounts; tax computed in the read model
+  - Order Created includes "totalTax" (computed) →  Includes items + amounts; tax computed in the read model
 
 - [ ] **Deterministic Read Models**: replaying the same events always produces the same read model
 
@@ -128,9 +127,9 @@ An entity's timeline here is its own event stream: the events in one swimlane la
 
 ### 5. Role & Actor Attribution Validation
 
-Verify that every command has explicit actor attribution from the Role Catalog (established in `eventmodeling-brainstorming-events`; the actor lanes carry its roles):
+Verify that every command has explicit actor attribution from the Role Catalog (on a sheet, the Role Catalog is the actor lanes and their lane notes; a command's attribution is the actor lane of the screen or automation that issues it):
 
-- [ ] **Role Catalog exists**: a Role Catalog was defined in Step 1 (`eventmodeling-brainstorming-events`)
+- [ ] **Role Catalog exists**: a Role Catalog was defined in Step 1 (eventmodeling-brainstorming-events)
   - CRITICAL: no Role Catalog found — commands have no actor attribution
   - PASS: Role Catalog with human roles and system actors defined
 
@@ -162,12 +161,12 @@ Confirmed ↛ Draft (invalid)
 
 ### 8. Issues & Recommendations Report
 
-Record the findings (see "Recording Findings") and give the summary in your reply:
+Format findings as notes (`set_note`, as described under "Model Context") and give the summary in your reply:
 
 ```markdown
 ## Validation Summary
 
-**Overall Status**: Ready with recommendations
+**Overall Status**:  Ready with recommendations
 
 **Blockers**: 0 critical issues
 
@@ -189,7 +188,7 @@ Record the findings (see "Recording Findings") and give the summary in your repl
 | Implicit preconditions | "Obviously can't do X" | Make preconditions explicit |
 | Orphaned events | Events no one reads | Link to a read model or command |
 | No read models | Commands validated against raw event replay with no documented read model | Add a read model documenting what the command actually reads |
-| Command issued by multiple things | COMMAND with 2+ inbound SCREEN/AUTOMATION flows | Keep the deliberate same-column issuer, remove the rest (`remove_flow`) — as a finding on the cell, not a silent fix |
+| Command issued by multiple things | COMMAND has 2+ inbound SCREEN/AUTOMATION flows | Keep the deliberate same-column issuer, remove the rest via `remove_flow` — as a finding on the cell, not a silent fix |
 
 ## Key Principles
 

@@ -7,25 +7,33 @@ These are conceptual worked examples of the team/system-boundary reasoning this 
 ```
 System Boundaries:
 
-Order Management System
-  - Owns: Order entity and its lifecycle
-  - Events: Order Created, Order Confirmed, Order Cancelled
-  - Owns: Order state machine
 
-Payment Processing System
-  - Owns: Payment authorization and processing
-  - Events: Payment Authorized, Payment Failed
-  - Owns: Payment state machine
+ Order Management System                             
+  - Owns: Order entity and its lifecycle             
+  - Events: Order Created, Order Confirmed, Cancelled  
+  - Owns: Order state machine                        
 
-Inventory System
-  - Owns: Stock levels and reservations
-  - Events: Inventory Reserved, Inventory Allocated
-  - Owns: Inventory state machine
 
-Fulfillment System
-  - Owns: Shipments and delivery
-  - Events: Order Shipped, Delivery Confirmed
-  - Owns: Shipment state machine
+
+ Payment Processing System                           
+  - Owns: Payment authorization and processing       
+  - Events: Payment Authorized, Payment Failed         
+  - Owns: Payment state machine                      
+
+
+
+ Inventory System                                    
+  - Owns: Stock levels and reservations              
+  - Events: Inventory Reserved, Inventory Allocated    
+  - Owns: Inventory state machine                    
+
+
+
+ Fulfillment System                                  
+  - Owns: Shipments and delivery                     
+  - Events: Order Shipped, Delivery Confirmed          
+  - Owns: Shipment state machine                     
+
 ```
 
 ## 2. Create Swimlane Diagram
@@ -35,12 +43,12 @@ Fulfillment System
                 →
 
 Order Team      Order Created   Order Confirmed   Order Cancelled
-
-Payment Team                    Payment Authorized    Payment Failed
-
-Inventory Team                  Inventory Reserved
-
-Fulfillment Team                Order Shipped    Delivery Confirmed
+                                                   
+Payment Team                 Payment Authorized    Payment Failed
+                                    
+Inventory Team                Inventory Reserved
+                                    
+Fulfillment Team              Order Shipped    Delivery Confirmed
 
 Each team owns their swimlane events
 Coordination via events crossing swimlanes
@@ -52,131 +60,123 @@ Coordination via events crossing swimlanes
 
 ```
 Order Management Team
-  Commands they handle:
-    - Create Order
-    - Confirm Order
-    - Cancel Order
-  Events they produce:
-    - Order Created
-    - Order Confirmed
-    - Order Cancelled
-  Read Models they maintain:
-    - Order Status View
-    - Order List View
-  Systems they call:
+ Commands they handle:
+   - Create Order
+   - Confirm Order
+   - Cancel Order
+ Events they produce:
+   - Order Created
+   - Order Confirmed
+   - Order Cancelled
+ Read Models they maintain:
+   - Order Status View
+   - Order List View
+ Systems they call:
     - Payment System (to confirm payment)
     - Inventory System (to check stock)
 
 Payment Processing Team
-  Commands they handle:
-    - Authorize Payment
-    - Process Payment
-    - Refund Payment
-  Events they produce:
-    - Payment Authorized
-    - Payment Failed
-    - Payment Refunded
-  Read Models they maintain:
-    - Payment Status View
-    - Transaction History
-  Systems they depend on:
+ Commands they handle:
+   - Authorize Payment
+   - Process Payment
+   - Refund Payment
+ Events they produce:
+   - Payment Authorized
+   - Payment Failed
+   - Payment Refunded
+ Read Models they maintain:
+   - Payment Status View
+   - Transaction History
+ Systems they depend on:
     - Payment Gateway (external)
     - Order System (for context)
 
 Inventory Team
-  Commands they handle:
-    - Reserve Inventory
-    - Release Reservation
-    - Allocate Stock
-  Events they produce:
-    - Inventory Reserved
-    - Reservation Released
-    - Stock Allocated
-  Read Models they maintain:
-    - Inventory Level View
-    - Reservation View
-  Systems they depend on:
+ Commands they handle:
+   - Reserve Inventory
+   - Release Reservation
+   - Allocate Stock
+ Events they produce:
+   - Inventory Reserved
+   - Reservation Released
+   - Stock Allocated
+ Read Models they maintain:
+   - Inventory Level View
+   - Reservation View
+ Systems they depend on:
     - Order System (triggers)
     - Warehouse System (stock source)
 
 Fulfillment Team
-  Commands they handle:
-    - Create Shipment
-    - Mark Shipped
-    - Confirm Delivery
-  Events they produce:
-    - Shipment Created
-    - Order Shipped
-    - Delivery Confirmed
-  Read Models they maintain:
-    - Shipment Tracking View
-    - Delivery Schedule View
-  Systems they depend on:
+ Commands they handle:
+   - Create Shipment
+   - Mark Shipped
+   - Confirm Delivery
+ Events they produce:
+   - Shipment Created
+   - Order Shipped
+   - Delivery Confirmed
+ Read Models they maintain:
+   - Shipment Tracking View
+   - Delivery Schedule View
+ Systems they depend on:
     - Inventory System (items to ship)
     - Carrier APIs (tracking)
 ```
 
 ## 4. Identify Inter-System Communication
 
-Every crossing enters the consuming system through a translation chain (`eventmodeling-designing-automation-chains`): the other system's event opens a translation automation's todo list; its command records the internal event; a worker automation follows only when a genuinely new decision remains.
-
 ```
 Communication Patterns:
 
 Order System  →  Payment System
-  Order System produces: Order Confirmed event (in the Order System's lane)
-  Payment System receives it through a translation chain:
-    Order Confirmed (Order lane) → Confirmed Orders (todo list) →
-    Record Confirmed Order (translation automation + command) → Order Confirmed (Payment System's own lane)
-  Payment System reacts: Authorize Payment (worker automation — the gateway call is a real decision)
-  Payment System produces: Payment Authorized event
+ Order System produces: Order Confirmed event
+ Payment System consumes: Order Confirmed
+ Payment System reacts: Issues Authorize Payment command
+ Payment System produces: Payment Authorized event
 
 Order System  →  Inventory System
-  Payment System produces: Payment Authorized event
-  Inventory System receives it through its own translation chain:
-    Payment Authorized (Payment lane) → Authorized Payments (todo list) →
-    Record Authorized Payment (translation automation + command) → Payment Authorized (Inventory System's own lane)
-  Inventory System reacts: Reserve Inventory (worker automation — checks stock)
-  Inventory System produces: Inventory Reserved event
+ Order System produces: Payment Authorized event (indirectly)
+ Inventory System consumes: Payment Authorized
+ Inventory System reacts: Issues Reserve Inventory command
+ Inventory System produces: Inventory Reserved event
 
 Inventory System  →  Fulfillment System
-  Inventory System produces: Inventory Reserved event
-  Fulfillment System receives it through its own translation chain, then
-    reacts: Create Shipment (worker automation — decides how to ship)
-  Fulfillment System produces: Order Shipped event
+ Inventory System produces: Inventory Reserved event
+ Fulfillment System consumes: Inventory Reserved
+ Fulfillment System reacts: Issues Create Shipment command
+ Fulfillment System produces: Order Shipped event
 ```
 
 ## 5. Define System Interfaces
 
 ```
 Order System Interface
-  Commands it accepts:
-    - Create Order (from UI)
-    - Confirm Order (from UI)
-    - Cancel Order (from UI or Processors)
-  Events it produces:
-    - Order Created
-    - Order Confirmed
-    - Order Cancelled
-  Read Models it provides:
+ Commands it accepts:
+   - Create Order (from UI)
+   - Confirm Order (from UI)
+   - Cancel Order (from UI or Processors)
+ Events it produces:
+   - Order Created
+   - Order Confirmed
+   - Order Cancelled
+ Read Models it provides:
     - Order Status View
     - Order List View
 
 Payment System Interface
-  Commands it accepts:
-    - Authorize Payment (from its Payment Processor)
-    - Process Payment (from its Payment Processor)
-    - Record Confirmed Order (from its translation automation)
-  Events it produces:
+ Commands it accepts:
+   - Authorize Payment (from Payment Processor/Order System)
+   - Process Payment (from Order System)
+ Events it produces:
     - Payment Authorized
     - Payment Failed
     - Payment Processed
 
 Inventory System Interface
-  Commands it accepts:
-    - Reserve Inventory (from its Inventory Processor, reading its todo list)
-    - Record Authorized Payment (from its translation automation)
-  Events it produces:
+ Commands it accepts:
+   - Reserve Inventory (triggered by Payment Authorized event)
+ Events it produces:
     - Inventory Reserved
     - Inventory Failed
 ```
@@ -187,37 +187,33 @@ Inventory System Interface
 Processors (autonomous automation):
 
 1. Payment Processor
-   Todo list opened by: Order Confirmed (internal, recorded by the translation automation)
-   Todo list closed by: Payment Authorized, Payment Failed
+   Triggered by: Order Confirmed event
    Logic: Calls external payment gateway
    Produces: Authorize Payment command
    Lives in: Payment System
 
 2. Inventory Processor
-   Todo list opened by: Payment Authorized (internal, recorded by the translation automation)
-   Todo list closed by: Inventory Reserved, Inventory Failed
+   Triggered by: Payment Authorized event
    Logic: Checks stock, reserves inventory
    Produces: Reserve Inventory command
    Lives in: Inventory System
 
 3. Fulfillment Processor
-   Todo list opened by: Inventory Reserved (internal, recorded by the translation automation)
-   Todo list closed by: Shipment Created
+   Triggered by: Inventory Reserved event
    Logic: Creates shipment records
    Produces: Create Shipment command
    Lives in: Fulfillment System
 
 4. Notification Processor
-   Todo list opened by: Order Created, Order Confirmed, Order Shipped (internal)
-   Todo list closed by: Notification Sent
+   Triggered by: Order Created, Order Confirmed, Order Shipped events
    Logic: Sends emails/SMS
-   Produces: Send Notification command
+   Produces: No commands (info-only)
    Lives in: Notification System (cross-cutting)
 ```
 
 ## Output Format — full worked example (Order/Payment/Inventory/Fulfillment domain)
 
-````markdown
+```markdown
 # System Organization: [Domain Name]
 
 ## System Boundaries
@@ -293,14 +289,14 @@ Delivery Confirmed
 ## Inter-System Communication
 
 ### Order → Payment
-- Trigger: Order Confirmed event (Order System's lane)
-- Received by: Payment System's translation chain (Confirmed Orders → Record Confirmed Order)
-- Result: Authorize Payment command issued by the Payment Processor
+- Trigger: Order Confirmed event
+- Action: Payment System listens via Processor
+- Result: Authorize Payment command issued
 
 ### Payment → Inventory
-- Trigger: Payment Authorized event (Payment System's lane)
-- Received by: Inventory System's translation chain (Authorized Payments → Record Authorized Payment)
-- Result: Reserve Inventory command issued by the Inventory Processor
+- Trigger: Payment Authorized event
+- Action: Inventory System listens via Processor
+- Result: Reserve Inventory command issued
 
 [Document all communication patterns]
 
@@ -330,6 +326,6 @@ Each system can:
 
 Coordination via:
 - Events (async messaging)
-- Processors (listen and react, through translation chains)
+- Processors (listen and react)
 - Read models (shared views)
-````
+```

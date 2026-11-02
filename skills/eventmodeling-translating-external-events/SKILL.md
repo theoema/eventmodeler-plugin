@@ -5,19 +5,9 @@ description: "Translate external system events (webhooks, APIs, IoT) into domain
 
 # Translating External Events
 
-This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. The tool mechanics every step shares (addressing, flows, fields) are in `eventmodeling-core-rules`' `../eventmodeling-core-rules/references/tools.md`.
+> EventModeler is already connected: there is nothing to log in to and no token to resolve. Consult [tools.md](../eventmodeling-core-rules/references/tools.md) only if you need to look up a specific tool this file doesn't cover — don't load it eagerly.
 
-Every tool call takes the `modelId`, and a `sheet` when the model has more than one. Placement is always by cell address (`C2`) — never by coordinates.
-
-## Where translation lives in the model
-
-An external event never reaches the domain directly. Every external event — a webhook, an API result, another team's event — is translated through the mandatory **translation chain** (`eventmodeling-designing-automation-chains`, Step 4b):
-
-```
-external EVENT → todo-list READMODEL → translation AUTOMATION + COMMAND → internal EVENT
-```
-
-This skill is the analysis that fills that chain in: which external events arrive, what their raw fields mean, how each maps onto the internal EVENT's domain fields, and how correlation, duplicates and missing data are handled. The chain's structure, columns and wiring are `eventmodeling-designing-automation-chains`' job; follow it for placement. The translated domain event this step produces **is** the chain's internal EVENT.
+This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 
 ## Interview Phase (Optional)
 
@@ -45,7 +35,7 @@ An answer you cannot get now (how will the other system echo our ID back? who ow
 
 ### 1. Identify External Event Sources
 
-For each external system, document its name, the events it sends, and a sample payload for each event type. Do this for every system your domain integrates with before moving on. Each external event becomes an `external-event` element in that system's own swimlane lane (the lane exists only to mark this integration — see `eventmodeling-brainstorming-events`' swimlane rule), carrying the raw fields of its payload. A full worked example (Stripe payment webhooks, GPS geofence events) is in `references/examples.md`.
+For each external system, document its name, the events it sends, and a sample payload for each event type. Do this for every system your domain integrates with before moving on. Each external event becomes an `external-event` element in the other system's own swimlane lane, carrying the raw fields of its payload. A full worked example (Stripe payment webhooks, GPS geofence events) is in `references/examples.md`.
 
 ### 2. Analyze Technical Representation
 
@@ -53,59 +43,63 @@ For each external event, list its raw technical fields and call out what's wrong
 
 ### 3. Define Domain Translation Rules
 
-Map each technical field to the domain concept it should become, and flag any domain field the external payload doesn't supply at all. When a required field (like your own internal ID) is missing, decide how to obtain it — typically either by storing a reference to the external ID when you initiate the external action, or by embedding your own ID as metadata that the external system echoes back. A full worked example (Stripe charge → `Payment Authorized`) is in `references/examples.md`.
-
-The mapping is declared on the flows, by field name. Name the todo-list read model's fields in domain terms and give each a `source: { from: <external event>, field: <raw field> }` when you place it (`place_element`), or map afterwards with `set_flow_mapping`; the hops after it (`ReadModelToProcessor`, `ProcessorToCommand`, `CommandToEvent`) are declared the same way, so the translation automation, its command and the internal event each carry the fields they pass on. A raw field the domain doesn't need is simply not mapped.
+Map each technical field to the domain concept it should become, and flag any domain field the external payload doesn't supply at all. When a required field (like your own internal ID) is missing, decide how to obtain it — typically either by storing a reference to the external ID when you initiate the external action, or by embedding your own ID as metadata that the external system echoes back. The mapping is declared on the flows, by field name: name the translated fields in domain terms and give each a `source: { from: <external event>, field: <raw field> }` when you place it (`place_element`), or map afterwards with `set_flow_mapping`. A raw field the domain doesn't need is simply not mapped. A full worked example (Stripe charge → `Payment Authorized`) is in `references/examples.md`.
 
 ### 4. Handle Correlation
 
-External systems rarely include your own entity IDs, so the correlation bridge must be created on **your** side, at the moment you initiate the external action — record a reference mapping your entity ID to the external ID you receive back. When the external event later arrives, that reference is how you recover your entity ID before the domain event is recorded. The reference must be visible in the model: a fact on your own side (an internal event recorded when you initiate the action, carrying both IDs) whose data reaches the translation automation — every field needs a source (`eventmodeling-information-completeness`), and a correlation ID with no source is a gap. A full worked example (Order ↔ Stripe charge reference tracking) is in `references/examples.md`.
+External systems rarely include your own entity IDs, so the correlation bridge must be created on **your** side, at the moment you initiate the external action — store a reference record mapping your entity ID to the external ID you receive back. When the external event later arrives, look up that reference to recover your entity ID before creating the domain event. The reference must be visible in the model: the internal event recorded when you initiate the action carries both IDs, and its data reaches the translation automation through the flows, so the correlation ID has a source (`eventmodeling-information-completeness`). A full worked example (Order ↔ Stripe charge reference tracking) is in `references/examples.md`.
 
 ### 5. Define Translation Scenarios
 
-For each external event, specify: its trigger, any precondition that must hold, the translation logic as an ordered list of steps, what a success looks like, and every failure scenario (e.g. missing correlation, invalid state, duplicate delivery) with its handling. Write them as scenarios on the translation COMMAND (`set_scenario`; `eventmodeling-elaborating-scenarios` has the scenario types): Given the external event (and any prior internal events the precondition depends on), When the translation command, Then the internal event. A decided failure — missing correlation, invalid state, duplicate delivery — is an error scenario (Then `{ errorType, errorMessage }`), never a comment; something genuinely undecided is a question (`create_pin`). A full worked example (Stripe `charge.succeeded`, GPS `geofence_exit`) is in `references/examples.md`.
+For each external event, specify: its trigger, any precondition that must hold, the translation logic as an ordered list of steps, what a success looks like, and every failure scenario (e.g. missing correlation, invalid state, duplicate delivery) with its handling. Write them as scenarios on the translation COMMAND (`set_scenario`; `eventmodeling-elaborating-scenarios` has the scenario types): Given the external event (and any prior internal events the precondition depends on), When the translation command, Then the internal event. A decided failure is an error scenario (Then `{ errorType, errorMessage }`), never a comment; something genuinely undecided is a question (`create_pin`). A full worked example (Stripe `charge.succeeded`, GPS `geofence_exit`) is in `references/examples.md`.
 
 ### 6. Handle Duplicates and Ordering
 
-External systems commonly redeliver the same event (e.g. webhook retries). Translation must be idempotent: a delivery whose external ID has already been recorded produces no second domain event. For that to be decidable, the resulting domain event carries the external ID as a field, and the duplicate-delivery case is specified as an error scenario (Given the internal event with that external ID already recorded, When the translation command, Then the duplicate is rejected). A full worked example (duplicate Stripe webhook delivery) is in `references/examples.md`.
+External systems commonly redeliver the same event (e.g. webhook retries). Translation must be idempotent: before creating a domain event, check whether one already exists for that external ID, and only create it if not. This requires storing the external ID on the resulting domain event so the check has something to query against. The duplicate-delivery case is specified as an error scenario: Given the internal event with that external ID already recorded, When the translation command, Then the duplicate is rejected. A full worked example (duplicate Stripe webhook delivery) is in `references/examples.md`.
 
 ### 7. Handle Partial or Missing Information
 
-External payloads are often incomplete. For each field the domain event needs, classify it as: enrich (take it from your own events — it must reach the translation automation through the model, with a source), ignore (not needed for this domain — leave it out), or infer (a safe assumption follows from the event itself — `isGenerated: true`). Document the classification explicitly rather than leaving a field's source implicit. A full worked example (GPS `geofence_exit` enrichment) is in `references/examples.md`.
+External payloads are often incomplete. For each field the domain event needs, classify it as: enrich (look it up from your own system), ignore (not needed for this domain), or infer (a safe assumption follows from the event itself). Document the classification explicitly rather than leaving a field's source implicit. Enriched fields need a source in the model: an enriched field must reach the translation automation through the flows, from one of your own events; an ignored field is left out (unmapped); an inferred value is `isGenerated: true`. A full worked example (GPS `geofence_exit` enrichment) is in `references/examples.md`.
 
 ## Output Format
 
-After completing the translation analysis, **build the translation chain on the sheet** (`eventmodeling-designing-automation-chains`): the external event in the other system's swimlane lane, the todo-list read model, and the translation automation + command + the translated domain event in this chapter's own swimlane lane.
+After completing the translation analysis, **place each translated domain event on the sheet** with `place_element` — as the last element of its translation chain (the chain's rule and shape are in `eventmodeling-designing-automation-chains`, Step 4b), so build the chain around it, left to right:
 
-The translated domain event:
+1. The external event: `place_element` with scope `external-event`, in the other system's swimlane lane (it normally already exists from Step 1), carrying the raw fields of its payload.
+2. The todo-list read model, with `isList: true`, its fields named in domain terms and each given a `source: { from: <external event>, field: <raw field> }`. Each `source` creates the flow (`ExternalEventToReadModel`) and its field mapping in the same call; `set_flow_mapping` declares one afterwards. The read model's placement is described in `eventmodeling-designing-automation-chains`.
+3. The translation automation (a `processor`) and its command, each carrying the fields it passes on with their `source`, wired `ReadModelToProcessor` and `ProcessorToCommand`.
+4. The translated domain event, wired `CommandToEvent` from the command:
 
 | Parameter | Value |
 |-----------|-------|
-| `scope` | `event` (`place_element`) |
-| `name` | `<Domain Event Name>` (translated name, not the external event name) |
-| `cell` | the swimlane-lane cell of the translation automation's column |
+| `element` | `{ scope: "event", name: "<Domain Event Name>" }` (translated name, not the external event name) |
+| `modelId` | the model's id (`list_models`) |
+| `sheet` | the existing sheet |
+| `cell` | the event (swimlane) lane cell of the translation automation's column |
 | `fields` | the domain fields, each with its `source` — including the external reference kept for deduplication |
 
-Keep the decisions with the model: a note on the translation automation's cell (`set_note`) holding the source system and event, the correlation key, the deduplication key and the enrich/ignore/infer classification. Then present the full translation rules as text to the user.
+Keep the decisions with the model: a note on the translation automation's cell (`set_note`, which replaces the cell's note, so read it first) holding the source system and event, the correlation key, the deduplication key and the enrich/ignore/infer classification. Run `check_model` and fix its errors.
+
+Then present the full translation rules as text to the user.
 
 ---
 
-The shape of a complete translation write-up (systems, rules, correlation, failure handling) is kept in `references/examples.md`; it is the information the model already holds, not a second output.
+Older versions of this skill wrote the translation rules as a standalone markdown document rather than placing translated events on the sheet; that legacy format is kept in `references/examples.md` for reference only — it is not the actual output mechanism (see "Output Format" above).
 
 ## Quality Checklist
 
 - [ ] Every external event type has translation rules
-- [ ] Every external event reaches the domain through the translation chain — never straight to an automation
 - [ ] Correlation mechanism defined (how to link back to domain entities)
 - [ ] External IDs captured for deduplication
-- [ ] Missing data handled (enrichment from our own events)
-- [ ] Duplicate webhook handling specified (idempotent)
-- [ ] Failure scenarios documented as error scenarios
+- [ ] Missing data handled (enrichment from our system)
+- [ ] Duplicate webhook handling implemented (idempotent)
+- [ ] Failure scenarios documented (as error scenarios)
 - [ ] Unanswered integration questions left as pins, not guessed
-- [ ] No raw external IDs leak into domain model (the external reference is kept as one explicitly named field, never used as an entity's identity)
+- [ ] Manual review process for unhandled cases
+- [ ] No raw external IDs leak into domain model
 - [ ] All external data validated before translation
 - [ ] Timestamp handling is consistent
-- [ ] Sensitive data from external systems handled properly (a field classification, decided per field)
+- [ ] Sensitive data from external systems handled properly
 
 ## Common Translation Patterns
 
@@ -136,8 +130,6 @@ Query our system for missing context → Enrich → Create domain event
 Example: Order confirmation from third-party fulfillment with only order ID
 ```
 
-Each pattern is the same chain: the extracted external fact is an event in the other system's swimlane lane, and everything from "Validate / Look up / Enrich / Create" onward is the translation automation, its command and the internal event.
-
 ## Key Principles
 
 1. **Correlation First**: Always establish how to link external events to domain entities
@@ -150,9 +142,8 @@ Each pattern is the same chain: the extracted external fact is an event in the o
 
 ## Integration Patterns to Avoid
 
-- **Direct External IDs**: Using Stripe charge ID as our primary ID
-- **No Correlation**: Translating events without way to correlate back
-- **Schema Leakage**: Exposing external JSON structure in domain events
-- **Unvalidated Data**: Trusting external data without verification
-- **Duplicate Processing**: No idempotent check, processes same webhook twice
-- **Direct Reaction**: An automation triggered by an external event with no translation chain
+ **Direct External IDs**: Using Stripe charge ID as our primary ID
+ **No Correlation**: Translating events without way to correlate back
+ **Schema Leakage**: Exposing external JSON structure in domain events
+ **Unvalidated Data**: Trusting external data without verification
+ **Duplicate Processing**: No idempotent check, processes same webhook twice

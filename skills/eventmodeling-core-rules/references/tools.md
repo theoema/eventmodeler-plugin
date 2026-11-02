@@ -2,7 +2,7 @@
 
 The one place that says which EventModeler tool does what. Every `eventmodeling-*` skill speaks in modeling concepts; this file turns them into calls. You are already connected: there is nothing to log in to, no token, no other interface. Tools are named bare, e.g. `place_element`.
 
-Every tool takes `modelId` (from `list_models`). Tools that act on a sheet take `sheet` (name or id); omit it only when the model has exactly one sheet.
+Every tool except `list_models` takes `modelId` (from `list_models`). Tools that act on a sheet take `sheet` (name or id); omit it only when the model has exactly one sheet.
 
 ## Vocabulary
 
@@ -46,7 +46,7 @@ A sheet may have several lanes of one kind: one `actor` lane per human role, one
 
 ## Addresses
 
-- Column: letter (`C`) or slice name. Row: number (`2`) or lane name. Cell: `C2`. Element: `C2.1`. A few tools (`remove_target`, the screen tools) accept a bare `C2` for the cell's only element.
+- Column: letter (`C`) or slice name. Row: number (`2`); the lane tools (`update_lane`, `move_lane`) also take the lane name, `set_note` and `remove_target` take the number only. Cell: `C2`. Element: `C2.1`. A few tools (`remove_target`, the screen tools) accept a bare `C2` for the cell's only element.
 - Addresses shift when columns or rows are inserted or moved. Re-read before you reuse one from earlier. In notes and pins, name elements; don't quote addresses.
 - A slice's columns are lettered individually; a slice spanning three columns owns three letters. Cells belong to a column, not to a slice.
 
@@ -145,11 +145,11 @@ Any other pair is refused (`INVALID_FLOW`). Placing an element never connects an
 `set_scenario` writes a scenario in one call: `{ scenario: "<name>", cell: "<specification cell>", … }` creates it in that `specification`-lane cell of its subject's column and fills it; on an existing scenario (by name or address) `cell` is ignored. A scenario is one of two kinds:
 
 - **Given/When/Then** — `given`, `when`, `then` (below): one isolated transition.
-- **Storyline** — `storyline: [beats]`: one read model walked through its states. A beat is an element reference, `{ element, fieldValues }` (an event's data or a single-record read model's state), `{ element, rows }` / `{ element, expectEmptyList: true }` (a list read model's state), or `{ note }`. It starts with the read model, events move it on, and each state follows the events that cause it; `set_scenario` refuses a storyline that breaks that order. `storyline` replaces all beats and never mixes with `given`/`when`/`then`.
+- **Storyline** — `storyline: [beats]`: one read model walked through its states. A beat is an element reference, `{ element, fieldValues }` (an event's data or a single-record read model's state), `{ element, rows }` / `{ element, expectEmptyList: true }` (a list read model's state), or `{ note }`. It starts with the read model, events move it on, and each state follows the events that cause it; `set_scenario` refuses a storyline that starts on an event or puts two read-model states side by side; one that ends on an event is accepted and `check_model` reports it (`storyline-shape`). `storyline` replaces all beats and never mixes with `given`/`when`/`then`.
 
 For a Given/When/Then scenario:
 
-- `given`: events, external events and read models (prior state). `when`: the command (or event) that triggers. `then`: events, commands, read models, or an expected failure `{ errorType, errorMessage }`.
+- `given`: events, external events and read models (prior state). `when`: the command that triggers, or one `{ query }` for a view (an event is accepted but `check_model` warns, `scenario-when-shape`). `then`: events, or one read model, or an expected failure `{ errorType, errorMessage }` (a command is accepted but warned, `scenario-then-shape`).
 - Entries are element addresses or names, or `{ element, fieldValues: { fieldName: value } }` for concrete example data. Each section you pass **replaces** that section; omit it to leave it unchanged. `[]` clears.
 - An entry may name an element on **another sheet**: `Reset Password!B3.1`, or its name. A name is looked up on the scenario's sheet first, then across the model. Never place a linked copy for a step. In the views each entry has a `ref` (`B3.1`, or `Sheet!B3.1`) saying where its element sits. In `build_sheet_from_spec`, scenario steps are spec addresses or `Sheet!B3.1`.
 - When a copy of an element exists on the sheet, a name matches both and is ambiguous: use the original's address. Reference the original, never the copy: a copy has no fields to take values, so an entry addressed at a copy is stored against its original.
@@ -179,7 +179,7 @@ Marks call out one part of a design: put `data-em-mark-id="<id>"` on the element
 | Area | Codes (severity) |
 |---|---|
 | Wiring | `command-without-event` (error), `command-without-issuer` (error), `command-multiple-issuers` (error), `screen-multiple-commands` (error), `event-without-command` (warning), `automation-without-todo-list` (error), `read-model-without-source` (error), `read-model-unconsumed`, `screen-disconnected`, `screen-mark-unanchored`, `event-disconnected`, `orphan-element`, `linked-copy-unwired` (warnings), `dangling-flow` (error) |
-| Direction and layout | `flow-backward` (error; the closing event into a todo-list read model is exempt), `column-multiple-events` (error), `sheet-starts-with-command` (warning), `state-change-without-trigger` (warning), `external-event-direct` (warning) |
+| Direction and layout | `flow-backward` (error; the closing event into a todo-list read model is exempt), `column-multiple-events` (error), `sheet-starts-with-command` (warning), `state-change-without-trigger` (warning), `external-event-direct` (warning), `sheets-overlap` (warning) |
 | Slices | `slice-mixed-shape` (error), `empty-slice` (info) |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` (warnings) |
 | Field sources | `untraceable-field` (warning), `unsourced-fields` (info), `pii-mismatch` (warning: a flow carries a value from a PII-marked field into an unmarked one, or the reverse) |

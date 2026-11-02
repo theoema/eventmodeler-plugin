@@ -1,6 +1,6 @@
 # Designing Event Models — Worked Examples
 
-These are conceptual worked examples (Order domain) illustrating the event-model design reasoning this skill applies. They are useful for understanding the reasoning; the actual instructions to follow live in the numbered Workflow sections of the main SKILL.md. Each is the summary you would give in the conversation. On the sheet, the same facts are elements, flows, fields, notes and scenarios.
+These are conceptual worked examples (Order domain) illustrating the event-model design reasoning this skill applies — useful for understanding the reasoning, but the actual instructions to follow live in the numbered Workflow sections of the main SKILL.md. Each is the summary you would give in the conversation; on the sheet, the same facts are elements, flows, fields, notes and scenarios.
 
 ## 1. Design Events — worked example
 
@@ -10,9 +10,9 @@ Entity: Order (order-123)
 Events (chronological):
 1. Order Created
    Triggered by: Create Order command
-   Data: customerId, items[], shippingAddress, createdAt
+   Data: customerId, items[], total, shippingAddress, createdAt
    (from command: customerId, items[], shippingAddress)
-   (implicit: orderId, createdAt)
+   (implicit: total calculated from items)
 
 2. Order Confirmed
    Triggered by: Confirm Order command
@@ -26,8 +26,6 @@ Events (chronological):
    (from command: shipmentId)
    (implicit: orderId, confirmed status verified)
 ```
-
-The order total is not on `Order Created`. It is calculated from the items, so it is a field of the read model that shows it (`Order Summary View`, below), marked `isGenerated`.
 
 ## 2. Design Commands — worked example
 
@@ -63,7 +61,7 @@ Data (optimized for queries):
   {
     orderId: string
     customerId: string
-    total: number            (isGenerated: calculated from the items)
+    total: number
     status: string
     createdAt: Date
     confirmedAt?: Date
@@ -133,7 +131,7 @@ Each arrow is a scenario on the sheet. `Cancel Order (rejected - already confirm
 
 **Events**:
 - Order Created: Initial event creating the order
-  Data: customerId, items[], shippingAddress
+  Data: customerId, items[], total, shippingAddress
 
 - Order Confirmed: Payment confirmed
   Data: paymentId, confirmedAt
@@ -162,7 +160,7 @@ Each arrow is a scenario on the sheet. `Cancel Order (rejected - already confirm
 
 ---
 
-## Read Models
+## Read Models (Optional)
 
 ### ReadModel: Order Summary View
 - Purpose: Quick lookup of order status

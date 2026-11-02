@@ -1,6 +1,6 @@
 # Translating External Events — Worked Examples
 
-These are conceptual worked examples of the translation reasoning this skill applies — useful for understanding the reasoning, but the actual mechanics are the numbered Workflow steps in the main SKILL.md. Each translation ends up as a translation chain on the sheet (`eventmodeling-designing-automation-chains`).
+These are conceptual worked examples of the translation reasoning this skill applies — useful for understanding the reasoning, but the actual mechanics are the numbered Workflow steps in the main SKILL.md.
 
 ## 1. Identify External Event Sources
 
@@ -40,7 +40,7 @@ Example payload: geofence_exit
 }
 ```
 
-On the sheet: a swimlane lane "Payment Gateway" holding an event `Charge Succeeded` with fields `id`, `amount`, `currency`, `customer`, `status`, `created`.
+On the sheet: a swimlane lane "Payment Gateway" holding an `external-event` `Charge Succeeded` with fields `id`, `amount`, `currency`, `customer`, `status`, `created`.
 
 ## 2. Analyze Technical Representation
 
@@ -56,11 +56,11 @@ Technical fields:
   - created: Unix timestamp
 
 Problems with using directly:
-  - We don't use Stripe customer IDs (we have our own customer IDs)
-  - Currency and amount require interpretation
-  - Status is one field in their model, we care about the fact it succeeded
-  - Stripe charge ID isn't the same as our order ID
-  - We need to correlate back to our Order stream
+   We don't use Stripe customer IDs (we have our own customer IDs)
+   Currency and amount require interpretation
+   Status is one field in their model, we care about the fact it succeeded
+   Stripe charge ID isn't the same as our order ID
+   We need to correlate back to our Order stream
 ```
 
 ## 3. Define Domain Translation Rules
@@ -69,7 +69,7 @@ Problems with using directly:
 Translation: External charge.succeeded → Domain Payment Authorized
 
 Mapping rules:
-  charge.id (Stripe) → paymentGatewayRef (keep for reconciliation, don't use as primary)
+  charge.id (Stripe) → paymentGatewayRef (store for reconciliation, don't use as primary)
   charge.customer (Stripe) → Look up: Which of OUR customers has this Stripe ID?
   charge.amount → paymentAmount (convert from cents)
   charge.currency → paymentCurrency
@@ -80,9 +80,9 @@ Problem identified:
 Stripe webhook comes with charge details but NOT our order ID.
 
 Solutions:
-A. Record the Stripe charge ID against our Order when we initiate payment
-     When webhook arrives: charge.id → find the order it was recorded against
-     Find orderId → record Payment Authorized
+A. Store Stripe charge ID in our Order when we initiate payment
+     When webhook arrives: charge.id → Look up in Order Payment Reference
+     Find orderId → Create Payment Authorized event
 
 B. Store custom metadata in Stripe charge
      When creating charge: Include our orderId in metadata
@@ -92,9 +92,8 @@ Choose A or B based on Stripe integration approach.
 ```
 
 In the model, the mapping is declared on the flow from the external event into the todo-list read model:
-
 ```
-place_element { "cell": "C2", "element": { "scope": "readmodel", "name": "Charges To Record",
+place_element { "cell": "C2", "element": { "scope": "readmodel", "name": "Charges To Record", "isList": true,
   "fields": [
     {"name": "paymentGatewayRef", "fieldType": "String", "example": "ch_1234567890", "source": {"from": "Charge Succeeded", "field": "id"}},
     {"name": "paymentAmount",     "fieldType": "Decimal", "example": "150.00",        "source": {"from": "Charge Succeeded", "field": "amount"}},
@@ -102,8 +101,7 @@ place_element { "cell": "C2", "element": { "scope": "readmodel", "name": "Charge
     {"name": "orderId",           "fieldType": "String", "example": "order-123",     "source": {"from": "Payment Initiated"}}
   ] } }
 ```
-
-`Payment Initiated` is the internal event of section 4 — the fact that carries the correlation. `amount` (cents) becoming `paymentAmount` (a decimal amount) is a conversion decision; state it in the translation note on the automation's cell.
+`Payment Initiated` stands for the internal event of section 4 that holds the Order Payment Reference — the fact that carries the correlation. `amount` (cents) becoming `paymentAmount` (a decimal amount) is a conversion decision; state it in the translation note on the automation's cell.
 
 ## 4. Handle Correlation
 
@@ -115,35 +113,33 @@ Our system flow:
   2. We initiate payment with Stripe:
      - Send amount, customer info
      - Receive charge ID: ch_1234567890
-     - Record the reference: Payment Initiated { orderId: order-123, paymentGatewayRef: ch_1234567890 }
+     - Store reference: Order Payment Reference { orderId: order-123, stripeChargeId: ch_1234567890 }
 
 When webhook arrives:
   1. Webhook: charge.succeeded { id: ch_1234567890, amount: 15000, ... }
-  2. Match paymentGatewayRef = ch_1234567890 to the recorded reference
-  3. Get orderId from the reference
-  4. Record Payment Authorized event: { orderId: order-123, amount: 150.00, ... }
+  2. Look up: Find Order Payment Reference where stripeChargeId = ch_1234567890
+  3. Get orderId from reference
+  4. Create Payment Authorized event: { orderId: order-123, amount: 150.00, ... }
 
 Key insight: You must create the correlation bridge when initiating external action.
 ```
-
-The reference is a fact on our side (`Payment Initiated`), so it is an event on the sheet whose fields reach the todo-list read model; the correlation is visible in the model and every field has a source.
 
 ## 5. Define Translation Scenarios
 
 ```
 External Event: charge.succeeded
 Trigger: Stripe webhook arrives with charge details
-Precondition: Payment Initiated was recorded for this charge ID
+Precondition: Order Payment Reference exists for this charge ID
 Translation logic:
   1. Extract charge.id from webhook
-  2. Find the orderId recorded for it
+  2. Look up Order Payment Reference.orderId
   3. Validate order exists and is in Confirmed state
-  4. Record domain event: Payment Authorized { orderId, amount, timestamp, ... }
+  4. Create domain event: Payment Authorized { orderId, amount, timestamp, ... }
 Success: Domain event produced
 Failure scenarios:
-  - Charge ID not recorded against any order → rejected, no event (manual review)
-  - Order not in Confirmed state → rejected, no event
-  - Duplicate webhook → rejected as a duplicate (already recorded)
+  - Charge ID not found in references → Log error, don't produce event (manual review)
+  - Order not in Confirmed state → Log error, don't produce event
+  - Duplicate webhook → Idempotent handling (check if event already exists)
 
 --- External Event: geofence_exit
 Trigger: Guest leaves hotel area (GPS geofence)
@@ -152,28 +148,27 @@ Translation logic:
   1. Extract userId and geoFenceId from webhook
   2. Validate guest is currently in hotel
   3. Check geofence_exit is "hotel-front-entrance" (not just any geofence)
-  4. Record domain event: Guest Left Hotel { guestId: userId, timestamp, ... }
+  4. Create domain event: Guest Left Hotel { guestId: userId, timestamp, ... }
 Success: Domain event produced
 Failure scenarios:
-  - Guest hasn't opted in → no event (respect privacy)
-  - Guest not checked in → no event (shouldn't be in geofence)
-  - Unknown geofence → rejected, no event
+  - Guest hasn't opted in → Don't produce event (respect privacy)
+  - Guest not checked in → Don't produce event (shouldn't be in geofence)
+  - Unknown geofence → Log error, don't produce event
 ```
 
 As scenarios on the translation command `Record Payment Authorization`, each created in the specification lane's cell of the command's column (`set_scenario` with `cell` creates and fills it in one call; shown here without it):
-
 ```
 set_scenario { "scenario": "Charge for a confirmed order",
-  "given": [ "Charge Succeeded", "Payment Initiated", "Order Confirmed" ],
-  "when":  [ "Record Payment Authorization" ],
-  "then":  [ "Payment Authorized" ] }
-
+  "given": [ { "element": "Charge Succeeded", "fieldValues": { "chargeId": "ch-77" } },
+             { "element": "Payment Initiated", "fieldValues": { "orderId": "o-42", "chargeId": "ch-77" } },
+             { "element": "Order Confirmed", "fieldValues": { "orderId": "o-42" } } ],
+  "when":  [ { "element": "Record Payment Authorization", "fieldValues": { "orderId": "o-42", "chargeId": "ch-77" } } ],
+  "then":  [ { "element": "Payment Authorized", "fieldValues": { "orderId": "o-42" } } ] }
 set_scenario { "scenario": "Charge not recorded against any order",
-  "given": [ "Charge Succeeded" ],
-  "when":  [ "Record Payment Authorization" ],
+  "given": [ { "element": "Charge Succeeded", "fieldValues": { "chargeId": "ch-99" } } ],
+  "when":  [ { "element": "Record Payment Authorization", "fieldValues": { "chargeId": "ch-99" } } ],
   "then":  [ { "errorType": "UnknownCharge", "errorMessage": "No order was recorded for this charge" } ] }
 ```
-
 (Use addresses rather than names where two elements share a name.)
 
 ## 6. Handle Duplicates and Ordering
@@ -185,17 +180,17 @@ Webhook 2: charge.succeeded { id: ch_123 } → Arrives at 10:05 AM (retry)
 
 Solution: Idempotent translation
 
-Before recording the event:
-  1. Take the external ID: ch_123
-  2. Has a Payment Authorized event with paymentGatewayRef = ch_123 been recorded?
-  3. If yes: reject as a duplicate (already processed)
-  4. If no: record the event
+Check before creating event:
+  1. Extract external ID: ch_123
+  2. Query: Does Payment Authorized event exist with paymentGatewayRef = ch_123?
+  3. If yes: Do nothing (already processed)
+  4. If no: Create event
 
-This requires the external ID on the event:
+This requires storing the external ID in the event:
 Payment Authorized event {
     orderId: order-123,
     amount: 150.00,
-    paymentGatewayRef: ch_123,  ← keep the external ID for deduplication
+    paymentGatewayRef: ch_123,  ← Store external ID for deduplication
     ...
   }
 ```
@@ -208,9 +203,9 @@ As a scenario: Given `Payment Authorized` with `paymentGatewayRef: ch_123` and `
 External Event: geofence_exit
 
 Available data:
-  - userId
-  - geoFenceId
-  - timestamp
+  - userId 
+  - geoFenceId 
+  - timestamp 
   - latitude, longitude (raw GPS)
 
 Missing data:
@@ -219,12 +214,12 @@ Missing data:
   - Expected return time (not available)
 
 Handling strategy:
-A. Translation enriches from our own events:
+A. Translation enriches from our system:
      Domain event: Guest Left Hotel {
        guestId: userId,  ← From webhook
        timestamp: ...,   ← From webhook
-       guestName: "John Smith",  ← From the guest's own events (Guest Checked In)
-       roomNumber: "502",  ← From the guest's own events (Guest Checked In)
+       guestName: "John Smith",  ← Looked up from guest stream
+       roomNumber: "502",  ← Looked up from guest stream
        geoFenceId: "front-entrance"  ← From webhook
      }
 
@@ -238,9 +233,9 @@ C. Some data we can infer:
 
 Enriched fields (`guestName`, `roomNumber`) need a source on the sheet: the `Guest Checked In` event feeds the read model the translation automation reads. Ignored fields are left unmapped. Inferred values are `isGenerated`.
 
-## Shape of a complete translation write-up
+## Legacy markdown structure (superseded — kept for reference only)
 
-The same information a translation note covers — kept on the sheet (events, fields, flows, scenarios, the note on the translation automation's cell) and presented as text at the end of the step.
+Older versions of this skill wrote the translation analysis as a standalone markdown document. The actual output mechanism today is placing each translated domain event on the sheet (see "Output Format" in the main SKILL.md) — this template is kept only so the shape of the information (what a complete translation write-up covers) stays documented somewhere.
 
 ````markdown
 # External Event Translation: [Domain Name]
@@ -275,8 +270,8 @@ The same information a translation note covers — kept on the sheet (events, fi
 **Domain Translation**:
 | External Field | Our Field | Mapping | Notes |
 |---|---|---|---|
-| externalId | externalRef | Kept for deduplication | Reference only |
-| customer | [enrich] | Our customer ID from our own events | Must correlate |
+| externalId | n/a | Stored for deduplication | Reference only |
+| customer | [lookup] | Look up our customer ID | Must correlate |
 
 **Correlation Method**:
 [How do we link back to our domain entities?]
@@ -287,10 +282,10 @@ The same information a translation note covers — kept on the sheet (events, fi
 
 **Translation Logic**:
 ```
-1. Extract from the external event
+1. Extract from webhook
 2. Validate preconditions
-3. Enrich from our own events
-4. Record the domain event
+3. Enrich from our system
+4. Create domain event
 ```
 
 **Success Scenario**:
@@ -310,10 +305,10 @@ The same information a translation note covers — kept on the sheet (events, fi
 
 Track how external IDs map to our domain:
 
-| Our Entity | External System | External ID Field | Recorded By | Matched On |
+| Our Entity | External System | External ID Field | Storage | Lookup |
 |---|---|---|---|---|
-| Order | Stripe | charge.id | Payment Initiated | paymentGatewayRef |
-| Guest | GPS Service | userId | Guest Checked In | guestId |
+| Order | Stripe | charge.id | Order Payment Reference | By charge ID |
+| Guest | GPS Service | userId | Guest stream | By userId |
 
 ---
 
@@ -322,12 +317,23 @@ Track how external IDs map to our domain:
 ### Webhook Arrives for Non-existent Order
 **Symptom**: Stripe sends charge.succeeded for unknown order
 **Cause**: Race condition or data inconsistency
-**Detection**: No recorded reference matches the charge ID
-**Recovery**: Rejected as an error scenario; queued for manual review
+**Detection**: Order Payment Reference lookup returns nothing
+**Recovery**: Log error, queue for manual review
 
 ### Duplicate Webhooks
 **Symptom**: Same webhook received multiple times
 **Cause**: Stripe retry mechanism or network duplication
-**Detection**: Domain event already recorded with same external reference
-**Recovery**: Duplicate is rejected; no second event
+**Detection**: Domain event already exists with same externalRef
+**Recovery**: Idempotent check prevents duplicate event creation
+
+---
+
+## Testing Recommendations
+
+- [ ] Test happy path: External event → Correct domain event
+- [ ] Test missing correlation: External event arrives before our order created
+- [ ] Test duplicate: Same webhook processed twice
+- [ ] Test invalid data: Webhook with missing required fields
+- [ ] Test partial data: Webhook with some fields missing
+- [ ] Test ordering: Multiple webhooks arrive out of order
 ````

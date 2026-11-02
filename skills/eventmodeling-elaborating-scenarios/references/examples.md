@@ -133,7 +133,7 @@ Then the view should accumulate:
 
 ## 3b. List-type Read Model Scenarios
 
-Expected rows and empty-list intent when the THEN read model is a list (the whole read model is a set of rows):
+Expected rows and empty-list intent when the THEN readmodel is a list (`isList: true`):
 
 ```
 Feature: Product Catalog
@@ -217,15 +217,15 @@ And Refund Initiated event should follow
 
 ## 6. The same scenario on the sheet
 
-How one of the scenarios above becomes a scenario element. The slice "Confirm Order" has the command `Confirm Order` in `C2`, the event `Order Confirmed` in `C3`, and the specification lane is row 5. Field names come from `get_slice_view`; the example values are only those the rule depends on (the order's id and its state).
+How one of the scenarios above becomes a scenario element. The slice "Confirm Order" has the command Confirm Order in `C2`, the event Order Confirmed in `C3`, and the specification lane is row 5. Field names come from `get_slice_view`; the example values are only those the rule depends on (the order's id and its state).
 
 ```
 set_scenario {
-  scenario: "Reject confirming an already-confirmed order",
-  cell: "C5",
-  given: [{ element: "Order Confirmed", fieldValues: { orderId: "order-456" } }],
-  when:  [{ element: "Confirm Order",    fieldValues: { orderId: "order-456" } }],
-  then:  [{ errorType: "OrderAlreadyConfirmed", errorMessage: "Order already confirmed" }]
+  "scenario": "Reject confirming an already-confirmed order",
+  "cell": "C5",
+  "given": [{ "element": "Order Confirmed", "fieldValues": { "orderId": "order-456" } }],
+  "when": [{ "element": "Confirm Order", "fieldValues": { "orderId": "order-456" } }],
+  "then": [{ "errorType": "OrderAlreadyConfirmed", "errorMessage": "Order already confirmed" }]
 }
 ```
 
@@ -233,11 +233,11 @@ The happy path of the same slice, with the asserted outcome as the filled values
 
 ```
 set_scenario {
-  scenario: "Confirm order in Draft state",
-  cell: "C5",
-  given: [{ element: "Order Created",   fieldValues: { orderId: "order-456" } }],
-  when:  [{ element: "Confirm Order",   fieldValues: { orderId: "order-456", paymentMethod: "card" } }],
-  then:  [{ element: "Order Confirmed", fieldValues: { orderId: "order-456", paymentMethod: "card" } }]
+  "scenario": "Confirm order in Draft state",
+  "cell": "C5",
+  "given": [{ "element": "Order Created", "fieldValues": { "orderId": "order-456" } }],
+  "when": [{ "element": "Confirm Order", "fieldValues": { "orderId": "order-456", "paymentMethod": "card" } }],
+  "then": [{ "element": "Order Confirmed", "fieldValues": { "orderId": "order-456", "paymentMethod": "card" } }]
 }
 ```
 
@@ -245,21 +245,21 @@ Both scenarios sit in `C5` — the specification lane is the one place where cel
 
 ## 7. A storyline on the sheet
 
-The list read model `Open Orders` (column `D`, specification lane row 5) shows the orders still waiting to be confirmed. One storyline says what three GWTs would only say in pieces: which event moves the list where, with the same order throughout.
+The list read model Open Orders (column `D`, specification lane row 5) shows the orders still waiting to be confirmed. One storyline says what three GWTs would only say in pieces: which event moves the list where, with the same order throughout.
 
 ```
 set_scenario {
-  scenario: "An order is open until it is confirmed",
-  cell: "D5",
-  storyline: [
-    { element: "Open Orders",     expectEmptyList: true },
-    { element: "Order Created",   fieldValues: { orderId: "order-456", total: "120.00" } },
-    { element: "Open Orders",     rows: [{ orderId: "order-456", total: "120.00" }] },
-    { note: "The customer pays the next morning." },
-    { element: "Order Confirmed", fieldValues: { orderId: "order-456", paymentMethod: "card" } },
-    { element: "Open Orders",     expectEmptyList: true }
+  "scenario": "An order is open until it is confirmed",
+  "cell": "D5",
+  "storyline": [
+    { "element": "Open Orders", "expectEmptyList": true },
+    { "element": "Order Created", "fieldValues": { "orderId": "order-456", "total": "120.00" } },
+    { "element": "Open Orders", "rows": [{ "orderId": "order-456", "total": "120.00" }] },
+    { "note": "The customer pays the next morning." },
+    { "element": "Order Confirmed", "fieldValues": { "orderId": "order-456", "paymentMethod": "card" } },
+    { "element": "Open Orders", "expectEmptyList": true }
   ]
 }
 ```
 
-It starts with the read model it walks through, in its first state; each later state follows the event that causes it, and the last beat is the state the last event leaves it in. A single-record read model's state is its `fieldValues` instead (`{ element: "Order Status", fieldValues: { orderId: "order-456", status: "Confirmed" } }`).
+It starts with the read model it walks through, in its first state; each later state follows the event that causes it, and the last beat is the state the last event leaves it in. A single-record read model's state is its `fieldValues` instead (`{ "element": "Order Status", "fieldValues": { "orderId": "order-456", "status": "Confirmed" } }`).

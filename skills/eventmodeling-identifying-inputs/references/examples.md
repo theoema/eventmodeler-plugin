@@ -1,6 +1,6 @@
-# Identifying Inputs: Worked Examples
+# Identifying Inputs — Worked Examples
 
-These are conceptual worked examples (Order/Payment domain) illustrating the command-identification reasoning this step applies. They are useful for understanding the reasoning, but the actual mechanics live in the numbered Workflow sub-steps of the main SKILL.md (placing COMMAND elements on the sheet and wiring them), not in writing a document like this.
+These are conceptual worked examples (Order/Payment domain) illustrating the command-identification reasoning this step applies — useful for understanding the reasoning, but the actual mechanics live in the numbered Workflow sub-steps of the main SKILL.md (placing COMMAND elements on the sheet), not in writing a document like this.
 
 ## 1. Extract Commands from UI Actions
 
@@ -42,7 +42,7 @@ Produces event: Payment Authorized
 Event Stream (Domain events):
 Payment Authorized → triggers Inventory system
 
-Processor: InventoryReserver
+Processor: Inventory Reserver
 
 Todo List:
 When Payment Authorized event arrives:
@@ -60,7 +60,7 @@ Event: Payment Authorized(orderId=order-123, items=[{prodId: P1, qty: 2}])
     ↓
 Todo added: Reserve P1 qty 2
     ↓
-Processor checks: P1 has 5 available, need 2 (OK)
+Processor checks: P1 has 5 available, need 2 
     ↓
 Action: Reserve 2 units
     ↓
@@ -69,23 +69,23 @@ Event produced: Inventory Reserved(orderId=order-123, reserved=[...])
 Todo marked done
 ```
 
-## 2c. Document Processor Automation
+## 2c. Document Processor Automation (Gears Symbol)
 
 ```text
 Command Catalog with Role Attribution (from Role Catalog):
 
 UI-Issued Commands (attributed to specific human roles):
-  1. Create Order (Order Entry screen) [Customer]
-  2. Confirm Order (Confirmation screen) [Customer]
-  3. Cancel Order (Status screen) [Customer]
-  4. Request Return (Order page) [Customer]
-  5. Override Order Status (Admin panel) [Support Agent]
+  1. Create Order (Order Entry screen) [ Customer]
+  2. Confirm Order (Confirmation screen) [ Customer]
+  3. Cancel Order (Status screen) [ Customer]
+  4. Request Return (Order page) [ Customer]
+  5. Override Order Status (Admin panel) [ Support Agent]
 
 Processor-Issued Commands (attributed to system actors):
-  6. Authorize Payment (Payment gateway webhook) [Payment Gateway]
-  7. Reserve Inventory (Triggered by Payment Authorized) [Inventory System]
-  8. Create Shipment (Triggered by Inventory Reserved) [Fulfillment System]
-  9. Notify Customer (Triggered by multiple events) [Notification Service]
+  6. Authorize Payment (Payment gateway webhook) [ Payment Gateway]
+  7. Reserve Inventory (Triggered by Payment Authorized) [ Inventory System]
+  8. Create Shipment (Triggered by Inventory Reserved) [ Fulfillment System]
+  9. Notify Customer (Triggered by multiple events) [ Notification Service]
 ```
 
 ## 3. Document Command Specifics
@@ -199,15 +199,15 @@ Implicit context (from stream state):
     Inventory must be reserved (from Inventory Reserved event)
 
 These implicit checks use stream state:
-    currentState.orderId === orderId                 (OK)
-    currentState.status === 'InventoryReserved'      (OK)
-    currentState.paymentId exists                    (OK)
-    currentState.shipmentId can be set               (OK)
+    currentState.orderId === orderId 
+    currentState.status === 'InventoryReserved' 
+    currentState.paymentId exists 
+    currentState.shipmentId can be set 
 ```
 
-## Legacy markdown-document format (superseded, kept for reference only)
+## Legacy markdown-document format (superseded — kept for reference only)
 
-Older versions of this skill wrote the command catalog as a markdown document instead of placing elements on the sheet. The actual mechanism today is the sheet (the "Output Format" and "Creating a COMMAND with fields" sections in the main SKILL.md). This template is kept only so the shape of the information (what a complete command catalog covers) stays documented somewhere.
+Older versions of this skill wrote the command catalog as a markdown document instead of placing elements on the sheet. The actual mechanism today is the sheet's tools (the "Output Format" and "Creating a COMMAND with fields" sections in the main SKILL.md) — this template is kept only so the shape of the information (what a complete command catalog covers) stays documented somewhere.
 
 ```markdown
 # Inputs: [Domain Name]
@@ -264,14 +264,14 @@ Verify every command input becomes event data:
 
 | Command Input | Event Data | Status |
 |---------------|-----------|--------|
-| customerId | orderId | Stored in Order Created |
-| items | items | Stored in Order Created |
-| shippingAddress | shippingAddress | Stored in Order Created |
+| customerId | orderId |  Stored in Order Created |
+| items | items |  Stored in Order Created |
+| shippingAddress | shippingAddress |  Stored in Order Created |
 
 ### Missing Data
 
 Document any input that doesn't make it to events:
-- None identified
+- None identified 
 
 ---
 
