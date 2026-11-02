@@ -178,6 +178,7 @@ Record the findings (see "Recording Findings") and give the summary in your repl
 ## Next Steps
 1. Review recommendations with domain expert
 2. Update model with critical fixes
+3. Beyond structure: `eventmodeling-reviewing-business-fit` (what the business would question), `eventmodeling-analyzing-stressors` (what could break the design), `eventmodeling-assessing-scenario-coverage` (how much behaviour the scenarios specify)
 ```
 
 ## Common Issues to Flag

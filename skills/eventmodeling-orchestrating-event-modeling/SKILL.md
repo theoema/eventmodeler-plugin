@@ -178,7 +178,7 @@ Update the Interview Trail row for this step (Status → Done, Key Output → on
 
 ## Mid-Workflow Entry
 
-If the user already has outputs from earlier steps, start from where they are. Don't ask them to recite which steps are complete; read it from the model: events with no commands means Steps 1-2 are done and Step 4 isn't; screens with no wired commands means Step 3 is done and Step 4 isn't; and so on. Ask only what the model can't tell you. Do not re-run completed steps. Pick up from the first incomplete one.
+To get oriented in a model someone else built, start with `eventmodeling-analyzing-existing-models` (read-only: what is there, how complete, what is open). If the user already has outputs from earlier steps, start from where they are. Don't ask them to recite which steps are complete; read it from the model: events with no commands means Steps 1-2 are done and Step 4 isn't; screens with no wired commands means Step 3 is done and Step 4 isn't; and so on. Ask only what the model can't tell you. Do not re-run completed steps. Pick up from the first incomplete one.
 
 ---
 
@@ -355,6 +355,13 @@ These skills are not part of the 11-step main path but extend the model for spec
 - **`eventmodeling-designing-event-models`**: use when the Command/Event/Read-Model structure or event causality need detailed design work. Can be applied at any step where those decisions arise, most commonly during or after Step 1.
 - **`eventmodeling-optimizing-stream-design`**: use after the model is complete to validate that every entity's event timeline is anchored on a single business identity, not a disguised collection or event log.
 - **`eventmodeling-translating-external-events`**: use when external systems (webhooks, IoT, third-party APIs) need to feed into the domain model.
+- **`eventmodeling-modeling-from-documents`**: use when the requirements arrive as a document, a URL or an image: it reads the source into a fact register and drives this workflow from it.
+- **`eventmodeling-assessing-scenario-coverage`**: use after Step 7 to rate how much of each slice's behaviour its scenarios specify and list the meaningful cases still missing (stored on the slice, shown on its header).
+- **`eventmodeling-adding-next-slice`**: use when the model is complete as far as it goes and a genuinely new capability is next.
+- **`eventmodeling-reviewing-business-fit`**: use after Step 9 for a business analyst's read of the model: what the business would question, as pins.
+- **`eventmodeling-analyzing-stressors`**: use after Step 9 to test the design against what could hit it (residuality stressor analysis) and redesign where it breaks.
+- **`eventmodeling-tracing-data`**, **`eventmodeling-adding-attributes`**, **`eventmodeling-adding-examples`**: use to follow one piece of information through the model, to add or rename a field along its whole chain, and to give fields and scenarios realistic example values.
+- **`eventmodeling-workshop-questions`**: use when questions should go to the domain people rather than to the requester.
 
 ### Further Reading
 

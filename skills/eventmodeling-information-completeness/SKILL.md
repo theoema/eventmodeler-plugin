@@ -36,7 +36,7 @@ So information typed into a form is `isUserInput` **on the screen**. The command
 
 ## How to check a field
 
-1. Look at the element's inbound neighbours: `get_slice_view` shows its fields and the flows into it, with their mappings. `check_model` lists what it can already see as `untraceable-field` (some inbound flow exists but covers the field) and `unsourced-fields` (no inbound flow at all and no stated origin).
+1. Look at the element's inbound neighbours: `get_slice_view` shows its fields and the flows into it, with their mappings. `trace_field` follows one field the whole way: upstream to where its value starts (`origins`: user input, generated, or `unsourced` — a gap) and downstream to everywhere it goes (`eventmodeling-tracing-data` walks through it). `check_model` lists what it can already see as `untraceable-field` (some inbound flow exists but covers the field) and `unsourced-fields` (no inbound flow at all and no stated origin).
 2. Pick the row above that matches. One neighbour with the same name, and nothing to write, is the common case.
 3. **No row fits → it's a gap.** The field is missing upstream, the connection is missing, or the element is missing. Close it: add the field upstream (and carry it through the chain the same way), add the connection (`create_flow`), or add the element. Only when the source genuinely can't be decided from the model, ask (`create_pin`).
 
@@ -58,7 +58,7 @@ While storyboarding, a displayed screen field is often meant to come from a read
 
 ## Renames move the lineage too
 
-Renaming a field breaks every downstream field that matched it by name, or that was sourced from `<oldName>`. In the same pass, either rename those too or point their source at the new name. When you rename with `update_element`, send the field with its existing `id` and the new `name` so mappings that point at it survive, and send the whole field list: a `fields` patch replaces it. For a chain, walk the flows downstream with `get_slice_view` and fix each field.
+Renaming a field breaks every downstream field that matched it by name, or that was sourced from `<oldName>`. In the same pass, either rename those too or point their source at the new name. When you rename with `update_element`, send the field with its existing `id` and the new `name` so mappings that point at it survive, and send the whole field list: a `fields` patch replaces it. For a chain, `trace_field` lists every downstream field the rename touches; fix each one (`eventmodeling-adding-attributes` does the whole chain). Scenario example values keyed by the old name follow a rename sent with the field's `id` automatically.
 
 ## Worked example — reserving a bike
 

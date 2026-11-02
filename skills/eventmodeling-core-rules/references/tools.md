@@ -59,7 +59,8 @@ Read in tiers, narrowest that answers the question.
 | `list_models` | Models you can reach, with your role |
 | `get_model_view` | Orientation: sheets, slices (name, status, columns), counts |
 | `get_sheet_view` | One sheet's grid: element names and types per cell, flows, scenario titles. No fields, no scenario bodies. |
-| `get_slice_view` | One slice in working detail: elements with fields, cell notes, scenario bodies, flows with mappings. Read this before editing a slice. |
+| `get_slice_view` | One slice in working detail: elements with fields, cell notes, scenario bodies, flows with mappings, the slice's scenario coverage. Read this before editing a slice. |
+| `trace_field` | One field followed through the model: `upstream` (where its value comes from, back to where it starts), `downstream` (everywhere it flows), `origins` (user input, generated, or `unsourced` — a gap). Across flows and sheets, by mapping or same-named field. |
 | `get_cell_view` | One cell (or one element) at full detail, plus its slice and lane notes |
 | `render_sheet` | A picture of the sheet (`cols: "A:D"` to crop wide sheets) |
 | `render_screen` | One screen's HTML design as an image |
@@ -78,6 +79,7 @@ A linked copy shows the original's name and carries **no fields of its own**: re
 | Widen / narrow a slice | `span_slice` (`to` or `cols`) |
 | Break a spanned slice in two | `split_slice` |
 | Rename / set status / annotate a slice | `update_slice` (`status`: draft, created, planned, in-progress, blocked, done) |
+| Record a slice's scenario coverage | `update_slice` with `coverage: { percentage, missing: [{ title, given?, when?, then? }] }` (`null` clears); see `eventmodeling-assessing-scenario-coverage` |
 | Reorder | `move_slice`, `move_column`, `move_lane` |
 | Add a lane | `insert_lane` (`kind`, `name`) |
 | Rename a lane / change its kind | `update_lane` (refused while the lane holds elements the new kind rejects) |

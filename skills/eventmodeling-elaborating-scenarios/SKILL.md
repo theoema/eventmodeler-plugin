@@ -477,6 +477,8 @@ Run `check_model`. For scenarios it reports `slice-without-scenario` (a slice th
 - Anything you could not express or reference, and why
 - The cell address of each specification cell you filled
 
+To rate how much of each slice's behaviour the scenarios now specify, and see which meaningful cases are still missing, run `eventmodeling-assessing-scenario-coverage`; it stores the result on each slice. Its `missing` cases are the next scenarios to write. For realistic values across many fields, see `eventmodeling-adding-examples`.
+
 ---
 
 ## Quality Checklist

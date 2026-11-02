@@ -13,6 +13,8 @@ Missing information, or something ambiguous that this step needs? Ask the user, 
 
 Already have everything the step needs? Skip straight to the step's own workflow. Don't ask questions whose answers you already have, and don't ask what the model itself already answers (read it first: `get_model_view`, then `get_sheet_view` on the sheets in scope).
 
+Questions only the domain people can answer (how the business really behaves, rather than what the requester wants) are worded with `eventmodeling-workshop-questions`.
+
 **Unless told not to ask** (an autonomous or unattended run, or the user has said not to stop for questions): don't block. Proceed with the most reasonable assumption for anything missing, and say so plainly and visibly, so it can be corrected later. Leave a pin (`create_pin`) on the area the assumption touches, worded as the question you would have asked and the assumption you took. Never silently guess.
 
 ## Recording the outcome

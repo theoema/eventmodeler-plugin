@@ -86,6 +86,8 @@ Correct what is wrong with the slice tools, never by adding model content:
 
 Rename a slice with `update_slice` (`name`). A split leaves the new slice with a placeholder name — always rename it. Never derive a broader "feature" name that spans several elements; if a slice seems to need one, it is two slices. `check_model` does not check names: read them from `get_sheet_view` and look for a leftover placeholder such as "Slice", or a name that differs from its subject's.
 
+When Steps 3–5 find nothing left to correct and every element already has its slice, the next capability is new modeling, not slicing: `eventmodeling-adding-next-slice`.
+
 ## Step 5: Set the Status
 
 Every slice carries a status (`update_slice`, `status`: draft, created, planned, in-progress, blocked or done). Leave a status a person has set. Where it is unset, set it from what the checks above found: a slice that passes them (one shape, named, scenarios in place) is `planned`; one that doesn't is `draft` until it does. `check_model` does not report an unset status: read each slice's `status` from `get_sheet_view`.
