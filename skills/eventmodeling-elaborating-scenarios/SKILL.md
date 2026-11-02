@@ -56,16 +56,13 @@ narrated lifecycle, GWT covers everything else about that read model.
 A storyline threads all three beats into one walkthrough; three separate GWTs could each assert one
 transition but not the lifecycle.
 
-> **Tool availability:** this server has no storyline tool yet. Still make the per-read-model decision and write the line for it (step 0 below). Where the answer is "storyline", write the GWTs that assert each transition, and leave a `set_note` on the read model's cell naming the lifecycle that still needs its storyline.
-
 ### Storyline shape
 
-A storyline has a title, an optional description, a layout (horizontal or vertical) and an ordered list of beats. Each beat is one state of the walkthrough and refers to an element on the same sheet; the *same* element (like the Todos read model above) may appear many times, once per state.
+A storyline is a scenario of its own kind: it sits in the same specification-lane cell as the read model's GWT scenarios (the read model's column) and is written with the same tool, `set_scenario`, passing `storyline` instead of `given`/`when`/`then` (Step 4d). It has a name, an optional description and an ordered list of beats. Each beat is one step of the walkthrough; the *same* read model (like the Todos read model above) appears many times, once per state.
 
-- **Beat order rules**: the first beat is a READMODEL; after a READMODEL comes an EVENT (or several); after an EVENT comes another EVENT or a READMODEL. Beats are only READMODEL or EVENT — no COMMAND, SCREEN or other types.
-- A beat may be marked as an alternate/error branch off the previous beat.
-- Example values, expected rows and an explicit empty list are set **per beat** — a list READMODEL beat carries its own expected rows (or is marked empty), so every intermediate state is asserted, not just "not empty". This is storyline-only: in a GWT scenario the same data goes on the scenario, never on the `then` step (see Step 4b).
-- A note beat may sit anywhere and is skipped by the order rules — see "Notes — Last Resort Only" before adding one.
+- **Beat order rules** (`set_scenario` refuses a storyline that breaks them): the first beat is a READMODEL; after a READMODEL comes an EVENT (or several); after an EVENT comes another EVENT or a READMODEL. Beats are only READMODELs and EVENTs (an external system's event too) — no COMMAND, SCREEN or other types. End on the READMODEL in the state the last event leaves it in: a storyline ending on an event asserts nothing (`check_model`: `storyline-shape`).
+- Data is set **per beat** — every intermediate state is asserted, not just "not empty": a list READMODEL beat carries its own `rows` (or `expectEmptyList: true`), a single-record READMODEL beat its `fieldValues`, an EVENT beat its `fieldValues`. A read-model beat that says nothing about its state is reported (`scenario-without-examples`).
+- A note beat (`{ note }`) may sit anywhere and is skipped by the order rules — see "Notes — Last Resort Only" before adding one.
 
 ## Notes — Last Resort Only
 
@@ -377,14 +374,15 @@ A given/when/then step refers to the element where it lives, **on any sheet**. A
 
 For each step (given/when/then entry) decide the element it refers to. An unresolved or ambiguous reference makes `set_scenario` fail as a whole, with nothing changed — resolve it (by address) and send the call again. A step whose true source event lives on a different sheet names that event there (`Sheet!B3.1`); don't fabricate a same-sheet event that isn't the real source, and don't leave the `given` empty for it. In a `build_sheet_from_spec` spec, a scenario's steps are addresses within the spec, or `Sheet!B3.1` for an element already on another sheet.
 
-### Step 4 — Place the scenario and fill it
+### Step 4 — Create and fill the scenario in one call
 
 ```
-place_element { cell: "<specification cell>", element: { scope: "scenarios", name: "Reject a reservation for a date in the past" } }
-set_scenario  { scenario: "<that name or the returned address>", given: [...], when: [...], then: [...], description?: "..." }
+set_scenario { scenario: "Reject a reservation for a date in the past", cell: "<specification cell>", given: [...], when: [...], then: [...], description?: "..." }
 ```
 
-A step is an element reference (address or name) or `{ element, fieldValues: { fieldName: value } }` to carry the example values. For a state-view scenario whose `when` needs to represent a query rather than a COMMAND, `when` may hold a single inline object that is **not** an element on the sheet: `{ "query": "...", "fieldValues": { "<name>": "<example>" } }`. Provided sections replace that section wholesale; omitted sections are untouched. Place a scenario and fill it in one go by sending both calls in one `apply_operations` batch (by the scenario's unique name), and group all the scenarios of one command or view the same way. `position` orders the card among its slice's scenarios.
+`cell` creates the scenario there when no scenario of that name exists on the sheet yet, and fills it in the same call — nothing is placed if any step fails to resolve. On an existing scenario (by name or address) `cell` is ignored and the call edits it. Every scenario and storyline is written this way; there is no separate placing step.
+
+A step is an element reference (address or name) or `{ element, fieldValues: { fieldName: value } }` to carry the example values. For a state-view scenario whose `when` needs to represent a query rather than a COMMAND, `when` may hold a single inline object that is **not** an element on the sheet: `{ "query": "...", "fieldValues": { "<name>": "<example>" } }`. Provided sections replace that section wholesale; omitted sections are untouched. Group all the scenarios of one command or view in one `apply_operations` batch. `position` orders the card among its slice's scenarios.
 
 **Rules for the steps (the method — keep to them even where a call would accept more):**
 - `given`: prior EVENTs. Where the case depends on what a read model was showing, that read model's state goes in `given` too (the context).
@@ -448,9 +446,33 @@ set_scenario {
 }
 ```
 
+### Step 4d — Storylines
+
+For a read model the decision rule sends to a storyline, write it with `storyline`: one beat per step, in order. A beat is an element reference, `{ element, fieldValues }` (an event's data, or a single-record read model's state), `{ element, rows }` / `{ element, expectEmptyList: true }` (a list read model's state), or `{ note }`. The storyline goes in the read model's own specification cell, beside its GWT scenarios.
+
+```
+set_scenario {
+  scenario: "A welcome notification is sent once",
+  cell: "C5",
+  storyline: [
+    { element: "Notifications To Send", expectEmptyList: true },
+    { element: "Customer Registered", fieldValues: { customerId: "c-7", email: "maja@example.com" } },
+    { element: "Notifications To Send", rows: [{ customerId: "c-7", email: "maja@example.com" }] },
+    { element: "Notification Sent", fieldValues: { customerId: "c-7" } },
+    { element: "Notifications To Send", expectEmptyList: true }
+  ]
+}
+```
+
+- Reuse the ids across beats (the same `customerId` in the opening event, the row and the closing event): that is what shows the row belongs to that event and leaves with the other.
+- Walk the lifecycle once, with the events that really move the read model. A second item opened before the first closes is worth a beat when the read model's behaviour depends on it (two rows at once); otherwise one item is the clearer story.
+- `storyline` replaces all beats. A storyline is never mixed with `given`/`when`/`then`, and a Given/When/Then case beside it is its own scenario in the same cell.
+- A GWT that only restates one step of the storyline (a row appearing after the opening event, the list emptying after the closing one) adds nothing: don't write it, and remove one that exists. Keep the GWTs for what the storyline does not walk through.
+- `check_model` reports `todo-list-without-storyline` for a todo-list read model (one that feeds an automation) with no storyline: every todo list gets one.
+
 ### Step 5 — Verify and report back
 
-Run `check_model`. For scenarios it reports `slice-without-scenario` (a slice that changes state but has none), `no-error-scenario` (only happy paths — consider a rejection), `scenario-missing-ref` (a step pointing at an element that no longer exists), `scenario-on-linked-copy` (a scenario that names a linked copy as its command or read model, or sits in a column whose only command or read model is a copy), `linked-copy-unwired` (a copy wired to nothing, typically placed only so a step could name it: remove it, and its slice if that leaves it empty; the step already names the original), and the step-shape codes above. It does not check that every read model has a view scenario, that the steps carry example values, or that each scenario sits in its subject's own slice: check those by hand from the Quality Checklist. Fix what it flags, then tell the user:
+Run `check_model`. For scenarios it reports `slice-without-scenario` (a slice that changes state but has none), `no-error-scenario` (only happy paths — consider a rejection), `scenario-missing-ref` (a step pointing at an element that no longer exists), `scenario-on-linked-copy` (a scenario that names a linked copy as its command or read model, or sits in a column whose only command or read model is a copy), `linked-copy-unwired` (a copy wired to nothing, typically placed only so a step could name it: remove it, and its slice if that leaves it empty; the step already names the original), `scenario-without-examples` (a scenario whose steps only name elements, or a storyline read-model beat that says nothing about its state), `storyline-shape` (a storyline with no beats, or ending on an event), `todo-list-without-storyline`, and the step-shape codes above. It does not check that every read model has a view scenario, that the values are the *essential* ones, or that each scenario sits in its subject's own slice: check those by hand from the Quality Checklist. Fix what it flags, then tell the user:
 - How many scenarios were put on the sheet (per command/view)
 - Anything you could not express or reference, and why
 - The cell address of each specification cell you filled

@@ -160,7 +160,7 @@ Failure scenarios:
   - Unknown geofence → rejected, no event
 ```
 
-As scenarios on the translation command `Record Payment Authorization` — each scenario card is placed first (`place_element`, `scope: "scenario"`, in the specification lane's cell of the command's column), then authored:
+As scenarios on the translation command `Record Payment Authorization`, each created in the specification lane's cell of the command's column (`set_scenario` with `cell` creates and fills it in one call; shown here without it):
 
 ```
 set_scenario { "scenario": "Charge for a confirmed order",

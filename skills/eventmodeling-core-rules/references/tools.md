@@ -140,7 +140,12 @@ Any other pair is refused (`INVALID_FLOW`). Placing an element never connects an
 
 ## Scenarios
 
-`place_element` with `scope: "scenario"` in a `specification`-lane cell of the slice's column, then `set_scenario` to author it:
+`set_scenario` writes a scenario in one call: `{ scenario: "<name>", cell: "<specification cell>", … }` creates it in that `specification`-lane cell of its subject's column and fills it; on an existing scenario (by name or address) `cell` is ignored. A scenario is one of two kinds:
+
+- **Given/When/Then** — `given`, `when`, `then` (below): one isolated transition.
+- **Storyline** — `storyline: [beats]`: one read model walked through its states. A beat is an element reference, `{ element, fieldValues }` (an event's data or a single-record read model's state), `{ element, rows }` / `{ element, expectEmptyList: true }` (a list read model's state), or `{ note }`. It starts with the read model, events move it on, and each state follows the events that cause it; `set_scenario` refuses a storyline that breaks that order. `storyline` replaces all beats and never mixes with `given`/`when`/`then`.
+
+For a Given/When/Then scenario:
 
 - `given`: events, external events and read models (prior state). `when`: the command (or event) that triggers. `then`: events, commands, read models, or an expected failure `{ errorType, errorMessage }`.
 - Entries are element addresses or names, or `{ element, fieldValues: { fieldName: value } }` for concrete example data. Each section you pass **replaces** that section; omit it to leave it unchanged. `[]` clears.
@@ -176,7 +181,7 @@ Marks call out one part of a design: put `data-em-mark-id="<id>"` on the element
 | Slices | `slice-mixed-shape` (error), `empty-slice` (info) |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` (warnings) |
 | Field sources | `untraceable-field` (warning), `unsourced-fields` (info), `pii-mismatch` (warning: a flow carries a value from a PII-marked field into an unmarked one, or the reverse) |
-| Scenarios | `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy` (warnings), `slice-without-scenario`, `no-error-scenario` (info), `scenario-missing-ref` (error) |
+| Scenarios | `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy`, `scenario-without-examples`, `storyline-shape` (warnings), `slice-without-scenario`, `no-error-scenario`, `todo-list-without-storyline` (info), `scenario-missing-ref` (error) |
 | Candidates, worth a look | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (info) |
 
 Linked copies resolve to their originals throughout: a flow landing on a copy credits the original, a screen and its copy are one issuer, and a copy implies no slice shape of its own.

@@ -220,9 +220,9 @@ And Refund Initiated event should follow
 How one of the scenarios above becomes a scenario element. The slice "Confirm Order" has the command `Confirm Order` in `C2`, the event `Order Confirmed` in `C3`, and the specification lane is row 5. Field names come from `get_slice_view`; the example values are only those the rule depends on (the order's id and its state).
 
 ```
-place_element { cell: "C5", element: { scope: "scenarios", name: "Reject confirming an already-confirmed order" } }
 set_scenario {
   scenario: "Reject confirming an already-confirmed order",
+  cell: "C5",
   given: [{ element: "Order Confirmed", fieldValues: { orderId: "order-456" } }],
   when:  [{ element: "Confirm Order",    fieldValues: { orderId: "order-456" } }],
   then:  [{ errorType: "OrderAlreadyConfirmed", errorMessage: "Order already confirmed" }]
@@ -232,13 +232,34 @@ set_scenario {
 The happy path of the same slice, with the asserted outcome as the filled values:
 
 ```
-place_element { cell: "C5", element: { scope: "scenarios", name: "Confirm order in Draft state" } }
 set_scenario {
   scenario: "Confirm order in Draft state",
+  cell: "C5",
   given: [{ element: "Order Created",   fieldValues: { orderId: "order-456" } }],
   when:  [{ element: "Confirm Order",   fieldValues: { orderId: "order-456", paymentMethod: "card" } }],
   then:  [{ element: "Order Confirmed", fieldValues: { orderId: "order-456", paymentMethod: "card" } }]
 }
 ```
 
-Both scenarios sit in `C5` — the specification lane is the one place where cells stack.
+Both scenarios sit in `C5` — the specification lane is the one place where cells stack. `cell` creates each one there and fills it in the same call.
+
+## 7. A storyline on the sheet
+
+The list read model `Open Orders` (column `D`, specification lane row 5) shows the orders still waiting to be confirmed. One storyline says what three GWTs would only say in pieces: which event moves the list where, with the same order throughout.
+
+```
+set_scenario {
+  scenario: "An order is open until it is confirmed",
+  cell: "D5",
+  storyline: [
+    { element: "Open Orders",     expectEmptyList: true },
+    { element: "Order Created",   fieldValues: { orderId: "order-456", total: "120.00" } },
+    { element: "Open Orders",     rows: [{ orderId: "order-456", total: "120.00" }] },
+    { note: "The customer pays the next morning." },
+    { element: "Order Confirmed", fieldValues: { orderId: "order-456", paymentMethod: "card" } },
+    { element: "Open Orders",     expectEmptyList: true }
+  ]
+}
+```
+
+It starts with the read model it walks through, in its first state; each later state follows the event that causes it, and the last beat is the state the last event leaves it in. A single-record read model's state is its `fieldValues` instead (`{ element: "Order Status", fieldValues: { orderId: "order-456", status: "Confirmed" } }`).
