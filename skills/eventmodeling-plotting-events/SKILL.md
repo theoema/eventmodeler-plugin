@@ -7,7 +7,7 @@ description: "Step 2 of Event Modeling - Arrange events chronologically in logic
 
 This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 
-Every tool call carries `modelId` (from `list_models`); `sheet` may be omitted only when the model has exactly one sheet. Positions are cell addresses (`B2`: column letter, lane number), never coordinates. The tool for each concept below is in [tools](../eventmodeling-core-rules/references/tools.md).
+Every tool call carries `modelId` (from `list_models`); `sheet` may be omitted only when the model has exactly one sheet. Element positions are cell addresses (`B2`: column letter, lane number), never coordinates. The tool for each concept below is in [tools](../eventmodeling-core-rules/references/tools.md).
 
 Arrange all brainstormed events chronologically to create a logical sequence that makes sense as a narrative timeline. Show how events flow and depend on each other.
 

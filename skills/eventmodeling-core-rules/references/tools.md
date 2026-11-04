@@ -28,7 +28,7 @@ Every tool except `list_models` takes `modelId` (from `list_models`). Tools that
 | Comment / finding / decision note | `set_note` |
 | Open question for the human | `create_pin` |
 | Validate | `check_model` |
-| Look at the board | `get_model_view`, `get_sheet_view`, `get_slice_view`, `get_cell_view`, `render_sheet` |
+| Look at the board | `get_model_view`, `get_sheet_view`, `get_slice_view`, `get_cell_view`, `render_sheet`, `render_board` |
 | Screen mockup | `place_element` with `design`, or `set_screen_design` |
 | Call out part of a screen | `marks` on `place_element` / `set_screen_design` |
 
@@ -63,6 +63,8 @@ Read in tiers, narrowest that answers the question.
 | `trace_field` | One field followed through the model: `upstream` (where its value comes from, back to where it starts), `downstream` (everywhere it flows), `origins` (user input, generated, or `unsourced` — a gap). Across flows and sheets, by mapping or same-named field. |
 | `get_cell_view` | One cell (or one element) at full detail, plus its slice and lane notes |
 | `render_sheet` | A picture of the sheet (`cols: "A:D"` to crop wide sheets) |
+| `render_board` | A picture of several sheets: a `context`, some `sheets`, a `region` of the canvas, or the whole canvas, with titles at the size a zoom gives them. Check a layout with it. |
+| `get_layout` | Where every sheet and context sits: x, y, width, height in canvas units, each title's box, and the titles that collide (`crowdedTitles`) |
 | `render_screen` | One screen's HTML design as an image |
 | `get_history` / `revert_model` | What changed, and rewinding. Every removal is recoverable. |
 
@@ -73,8 +75,11 @@ A linked copy shows the original's name and carries **no fields of its own**: re
 | To | Use |
 |---|---|
 | Create a model | `create_model` |
-| Create a sheet | `create_sheet` (goes under the existing sheets; `below` / `above` / `rightOf` / `leftOf` another sheet to put it elsewhere) |
-| Arrange sheets on the canvas | `move_sheet` (`below` / `above` / `rightOf` / `leftOf` another sheet; sheets in the way move along) |
+| Create a sheet | `create_sheet` (goes under the existing sheets; `below` / `above` / `rightOf` / `leftOf` another sheet, optionally with a `gap`, to put it elsewhere) |
+| Arrange sheets on the canvas | `move_sheet` (`below` / `above` / `rightOf` / `leftOf` another sheet, optional `gap`; sheets in the way move along) |
+| Put sheets at exact positions | `place_sheets` (`placements: [{ sheet, x, y }]` in canvas units, from `get_layout`; refused, nothing moved, if a sheet would land on another) |
+| Lay out a context as rows of sheets | `layout_context` (`context` or a new `name`, `rows: [[sheet, …], …]`, optional `gapX` / `gapY` / `at`); its box is fitted with room for the titles |
+| Arrange whole contexts | `layout_board` (`contexts` in order, `direction` right or down, optional `gap`, `wrapAfter`, `at`); each context moves with its sheets |
 | Add a slice (one or more columns) | `insert_slice` (`name`, `at` = 1-based column position, `cols`) |
 | Widen / narrow a slice | `span_slice` (`to` or `cols`) |
 | Break a spanned slice in two | `split_slice` |
@@ -85,7 +90,7 @@ A linked copy shows the original's name and carries **no fields of its own**: re
 | Rename a lane / change its kind | `update_lane` (refused while the lane holds elements the new kind rejects) |
 | Remove an element, a row or a column | `remove_target` (cascades to flows, mappings, scenario entries) |
 | Delete a sheet | `delete_sheet` (reports the linked copies on other sheets that go with it) |
-| Group sheets in a named box (a bounded context, a team's area) | `set_context` with `name` + `sheets`; pass `context` to rename it or re-fit it around other sheets. `delete_context` removes the box, never the sheets. `get_model_view` lists contexts and their sheets. Moving a sheet doesn't move its box: re-fit it. |
+| Group sheets in a named box (a bounded context, a team's area) | `set_context` with `name` + `sheets`; pass `context` to rename it or re-fit it around other sheets. `delete_context` removes the box, never the sheets. `get_model_view` lists contexts and their sheets. Moving a sheet doesn't move its box: re-fit it (`layout_context` lays out and fits in one call). |
 
 One cell holds one element. To fit a second element on the same lane in the same slice, widen the slice first (`span_slice`, or `insert_slice` with `cols`). Never fight the grid by stacking.
 

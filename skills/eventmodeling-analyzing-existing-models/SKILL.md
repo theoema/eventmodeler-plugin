@@ -48,7 +48,7 @@ Read in tiers, narrowest that answers the question.
 - `get_sheet_view` per sheet in scope: the grid with element names and types per cell, flows and scenario titles. Enough for the inventory, the slice shapes and the structural shapes.
 - `get_slice_view` only for a slice you need to look closer at: fields, flows with mappings, scenario bodies, notes. Do not read every slice in full on a large model; read the ones the checks or the counts point at.
 - `list_pins` with `status: "waiting"`: the questions still waiting on a person. Count them and name the areas they sit on.
-- `render_sheet` when a picture helps you see a layout problem; it is not needed for the counts.
+- `render_sheet` when a picture helps you see a layout problem within a sheet, `render_board` for how the sheets and contexts sit on the canvas; neither is needed for the counts.
 
 Count **canonical elements only**. A linked copy is the same fact reused, intentional and never a duplicate (only a copy wired to nothing is worth a mention, as `linked-copy-unwired`), so report copies on their own line and do not add them to the inventory.
 

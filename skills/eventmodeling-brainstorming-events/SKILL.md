@@ -7,7 +7,7 @@ description: "Step 1 of Event Modeling - Brainstorm all domain events from requi
 
 This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them. Its `../eventmodeling-core-rules/references/tools.md` maps the vocabulary below to this server's tools; consult it only if you need to look up a specific tool or field this file doesn't cover.
 
-Every tool call carries `modelId` (from `list_models`). `sheet` may be omitted only when the model has exactly one sheet. Element kinds are written as `event`, `command`, `readmodel`, `screen`, `processor` (an AUTOMATION) and `external-event`. Positions are cell addresses (`B2`: column letter, row number), never coordinates.
+Every tool call carries `modelId` (from `list_models`). `sheet` may be omitted only when the model has exactly one sheet. Element kinds are written as `event`, `command`, `readmodel`, `screen`, `processor` (an AUTOMATION) and `external-event`. Element positions are cell addresses (`B2`: column letter, row number), never coordinates.
 
 ## Interview Phase (Optional)
 

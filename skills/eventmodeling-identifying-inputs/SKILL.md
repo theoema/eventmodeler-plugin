@@ -9,7 +9,7 @@ This step applies the shared element rules in **`eventmodeling-core-rules`** —
 
 Tool names and conventions are in [tools.md](../eventmodeling-core-rules/references/tools.md).
 
-Every tool call carries `modelId` (from `list_models`). `sheet` may be omitted only when the model has exactly one sheet. Element kinds are written as `command`, `event`, `screen` and `processor` (an AUTOMATION). Positions are cell addresses (`B2`: column letter, row number), an element inside a cell is `B2.1`, never coordinates. Addresses are positional: after inserting or moving a column or lane, re-read the sheet before using one.
+Every tool call carries `modelId` (from `list_models`). `sheet` may be omitted only when the model has exactly one sheet. Element kinds are written as `command`, `event`, `screen` and `processor` (an AUTOMATION). Element positions are cell addresses (`B2`: column letter, row number), an element inside a cell is `B2.1`, never coordinates. Addresses are positional: after inserting or moving a column or lane, re-read the sheet before using one.
 
 ## Interview Phase (Optional)
 

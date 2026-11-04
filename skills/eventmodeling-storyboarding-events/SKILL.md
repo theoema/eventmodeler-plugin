@@ -5,7 +5,7 @@ description: "Step 3 of Event Modeling - Create UI storyboards/mockups showing w
 
 # Storyboarding Events
 
-> Every tool call takes the `modelId` (from `list_models`), and a `sheet` when the model has more than one. Consult [tools.md](../eventmodeling-core-rules/references/tools.md) only if you need to look up a specific tool or field this file doesn't cover — don't load it eagerly. Element kinds are written as `screen` and `processor` (an AUTOMATION), among others. Positions are cell addresses (`B2`: column letter, row number), never coordinates. Addresses are positional: after inserting or moving a column or lane, re-read the sheet before using one.
+> Every tool call takes the `modelId` (from `list_models`), and a `sheet` when the model has more than one. Consult [tools.md](../eventmodeling-core-rules/references/tools.md) only if you need to look up a specific tool or field this file doesn't cover — don't load it eagerly. Element kinds are written as `screen` and `processor` (an AUTOMATION), among others. Element positions are cell addresses (`B2`: column letter, row number), never coordinates. Addresses are positional: after inserting or moving a column or lane, re-read the sheet before using one.
 
 This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 

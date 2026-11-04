@@ -7,7 +7,7 @@ description: "Step 4b of Event Modeling - design every automation's todo-list re
 
 This step applies the shared element rules in **`eventmodeling-core-rules`** — read it once per session if you haven't already; it defines what a COMMAND/EVENT/READMODEL/SCREEN/AUTOMATION is, how each is named, and the anti-patterns to reject, so this step doesn't restate them.
 
-Every tool call carries `modelId` (from `list_models`); `sheet` may be omitted only when the model has exactly one sheet. Positions are cell addresses (`C2`: column letter, lane number), never coordinates. The tool for each concept below is in [tools](../eventmodeling-core-rules/references/tools.md).
+Every tool call carries `modelId` (from `list_models`); `sheet` may be omitted only when the model has exactly one sheet. Element positions are cell addresses (`C2`: column letter, lane number), never coordinates. The tool for each concept below is in [tools](../eventmodeling-core-rules/references/tools.md).
 
 This is **Step 4b**. It runs immediately after `eventmodeling-identifying-inputs` (Step 4) places an AUTOMATION and its COMMAND, and before `eventmodeling-identifying-outputs` (Step 5) designs any screen-facing read model. Designing an automation's todo list — and, when it applies, its translation chain — while the automation is still fresh from Step 4 is what prevents the alternative: discovering the gap only once Step 5's own verification pass runs, after commands and flows already built on top of the incomplete shape.
 
