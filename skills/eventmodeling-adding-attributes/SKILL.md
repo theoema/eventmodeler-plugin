@@ -48,14 +48,14 @@ Work out every element's new field list before you write anything, from the orig
 
 ## Step 4 — Write it
 
-A `fields` patch in `update_element` **replaces the whole field list**: send every field of the element, with the existing ids, changing only the one you mean to. Field shape is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?}`, plus `source` at write time.
+To add one field use `addFields`, to rename or change one use `updateFields: [{ name, newName?, ... }]` in the `update_element` patch: the other fields and their ids are not touched. A `fields` patch **replaces the whole field list** (send every field, with the existing ids). Field shape is exactly `{name, fieldType, isList?, isGenerated?, isOptional?, isUserInput?, isPii?, example?}`, plus `source` at write time.
 
 A chain is one logical edit, so send it as one `apply_operations` batch of `update_element` calls, ordered from the origin forward so every `source` refers to a field that already exists. If a step fails the batch applies nothing: fix the cause and resend the whole batch. For one or two elements, plain `update_element` calls are enough.
 
 ## Step 5 — Verify
 
 - `trace_field` for the new name from the target: the steps lead back to the origin you intended, via the mappings you meant.
-- `check_model` for the sheets touched. Fix `untraceable-field` and `unsourced-fields` on the changed fields, and `pii-mismatch` where a flow now carries a personal value into an unmarked field. Nothing here is a detail to leave for later.
+- `check_model` for the sheets touched, with `severity: "info"` (`unsourced-fields` is info). Fix `untraceable-field` and `unsourced-fields` on the changed fields, and `pii-mismatch` where a flow now carries a personal value into an unmarked field. Nothing here is a detail to leave for later.
 
 ## Step 6 — Report
 
@@ -84,7 +84,7 @@ Lineage: starts at Register Customer, where the value is generated. Every later 
 - [ ] The chain was found from the model (`trace_field`, flows), not assumed from names
 - [ ] Every new or renamed field has a source: same name upstream, a `source` or mapping, or a flag where the information starts
 - [ ] Nothing is marked `isGenerated` or `isUserInput` only to silence a gap
-- [ ] Every `fields` patch carried the element's whole field list, with existing ids
+- [ ] Fields went in with `addFields` / `updateFields`, or a `fields` patch carrying the whole list with existing ids
 - [ ] Linked copies were left alone; the originals were edited
 - [ ] A rename also fixed the fields downstream that lost their source, and scenario values keyed by the old name
 - [ ] `isPii` was set on every element a personal value passes through

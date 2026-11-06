@@ -164,7 +164,7 @@ set_note { "target": "E2", "text": "Planned read model \"Available Bike View\": 
 set_note { "target": "F2", "text": "Planned read model \"Active Reservation View\": reservationId, bikeName, stationName, startTime, expiresAt" }
 ```
 
-A read model named in a planned-read-model line but not on the sheet (or not connected to this screen) is a **gap** for Step 5 (Identifying Outputs) to close. `check_model` reports a screen's fields with no stated origin as `unsourced-fields` (info) until it lands. Flag it in the completeness notes, and don't invent connections that don't exist.
+A read model named in a planned-read-model line but not on the sheet (or not connected to this screen) is a **gap** for Step 5 (Identifying Outputs) to close. `check_model` (with `severity: "info"`) reports a screen's fields with no stated origin as `unsourced-fields` (info) until it lands. Flag it in the completeness notes, and don't invent connections that don't exist.
 
 A field that genuinely displays/collects a list of values (e.g. a repeated line-item row) is `isList: true`; leave it off for a single value, which is the default when unsure. Only add the fields the screen actually shows or captures — do not add speculative fields; enrich later via `eventmodeling-adding-attributes` (`update_element` with `fields` replaces the list: resend every field, and unchanged names keep their ids).
 

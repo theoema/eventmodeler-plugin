@@ -13,7 +13,7 @@ This step applies the shared element rules in **`eventmodeling-core-rules`** —
 
 Before starting, read the current model state to drive the analysis from what is actually in the model rather than relying solely on conversation context:
 
-**Run `check_model` first** (once per sheet with `sheet`, or without it for the whole model). It already checks, mechanically, much of what this step asks for; don't re-derive those by hand — see "What `check_model` covers" below. It does not judge anything: a clean result means the structure is sound, not that the model is right.
+**Run `check_model` first** with `severity: "info"` (once per sheet with `sheet`, or without it for the whole model; `unsourced-fields`, `empty-slice` and `slice-without-scenario` are info). It already checks, mechanically, much of what this step asks for; don't re-derive those by hand — see "What `check_model` covers" below. It does not judge anything: a clean result means the structure is sound, not that the model is right.
 
 The field origin/destination checks need every element's fields plus its dependencies, which `get_slice_view` returns per slice in one call (elements with their fields, cell notes, scenario bodies, and the flows with their field mappings):
 ```

@@ -102,7 +102,7 @@ The capability is your inference, not a decision a person made. Say so on the mo
 - set the new slice's status to draft (`update_slice`), so nobody mistakes it for agreed work. A person can promote it;
 - when you chose between several reasonable next steps, or assumed something a person might reasonably answer differently, record it: a note on the slice (`set_note`; read the existing note first, since it replaces the text) for what you assumed and why, and a pin (`create_pin`, anchored on the new slice's cells, worded as a question) only where an answer would change the slice. The pin does not replace the slice, which is built either way.
 
-Scenarios are the next step, not part of this one (`eventmodeling-elaborating-scenarios`). Build one only if the person asks. For a command slice `check_model` reports it as having none (`slice-without-scenario`, info); a read-model or automation slice without one is not flagged, so say it is unspecified in your reply.
+Scenarios are the next step, not part of this one (`eventmodeling-elaborating-scenarios`). Build one only if the person asks. For a command slice `check_model` with `severity: "info"` reports it as having none (`slice-without-scenario`, info); a read-model or automation slice without one is not flagged, so say it is unspecified in your reply.
 
 ---
 

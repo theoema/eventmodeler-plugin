@@ -56,7 +56,7 @@ While storyboarding, a displayed screen field is often meant to come from a read
 
 ## Renames move the lineage too
 
-Renaming a field breaks every downstream field that matched it by name, or that has a `source` pointing at `<oldName>`. In the same write, either rename those too or set their `source` to the new name. `eventmodeling-adding-attributes` does this for a chain. When you rename with `update_element`, send the field with its existing `id` and the new `name` (a `fields` patch replaces the whole list), so mappings that point at it survive. Scenario example values keyed by the old name follow a rename sent with the field's `id` automatically.
+Renaming a field breaks every downstream field that matched it by name, or that has a `source` pointing at `<oldName>`. In the same write, either rename those too or set their `source` to the new name. `eventmodeling-adding-attributes` does this for a chain. When you rename with `update_element`, use `updateFields: [{ name: "old", newName: "new" }]` (or send the field in a `fields` patch with its existing `id` and the new `name`), so mappings that point at it survive. Scenario example values keyed by the old name follow the rename automatically, on the element's steps and its copies'.
 
 ## Worked example — reserving a bike
 

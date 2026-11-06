@@ -92,7 +92,7 @@ When that's the case, model it as its own event, produced via the same todo-list
 
 After each step that creates elements (Steps 1–5), scan for any elements that are not where they belong. An element can't be left at a default position here, because it only exists in a cell; what gets stranded is structure that connects to nothing.
 
-Run `check_model` for each sheet in scope and read these findings: `empty-slice`, `orphan-element`, `event-disconnected`, `screen-disconnected`, `read-model-unconsumed`, `read-model-without-source`, `command-without-event`, `dangling-flow`.
+Run `check_model` for each sheet in scope, with `severity: "info"` (`empty-slice` is info), and read these findings: `empty-slice`, `orphan-element`, `event-disconnected`, `screen-disconnected`, `read-model-unconsumed`, `read-model-without-source`, `command-without-event`, `dangling-flow`.
 
 **For each one:**
 - **If it belongs in the current model** → connect it (`create_flow`) or move it to the cell where it belongs (`move_element`).

@@ -70,7 +70,7 @@ Group the slices by status: draft, created, planned, in-progress, blocked, done.
 
 Coverage has two levels. Report both.
 
-**Presence.** Which slices have at least one scenario, and which have none. `check_model` reports only the command slices without one (`slice-without-scenario`); count the read-model and automation slices without one from the scenario titles in `get_sheet_view`. Of the command slices, which have no rejection scenario at all (`no-error-scenario`); that is only a gap where the command can be refused for a business reason, so read the command before reporting it. Of the todo-list read models, which have no storyline (`todo-list-without-storyline`). Scenarios whose steps carry no example values (`scenario-without-examples`) count as present but weak: say so.
+**Presence.** Which slices have at least one scenario, and which have none. `check_model` with `severity: "info"` reports only the command slices without one (`slice-without-scenario`); count the read-model and automation slices without one from the scenario titles in `get_sheet_view`. Of the command slices, which have no rejection scenario at all (`no-error-scenario`); that is only a gap where the command can be refused for a business reason, so read the command before reporting it. Of the todo-list read models, which have no storyline (`todo-list-without-storyline`). Scenarios whose steps carry no example values (`scenario-without-examples`) count as present but weak: say so.
 
 **Assessed coverage.** Each slice may carry a `coverage` assessment in the views: `percentage` (the share of the slice's meaningful use cases its scenarios specify) and `missing` (up to ten meaningful cases still unspecified). Report it where it exists:
 
@@ -89,7 +89,7 @@ Coverage has two levels. Report both.
 | state-view | EVENT(s), then READMODEL, then SCREEN or AUTOMATION | the read model has no source (`read-model-without-source`) or nothing reads it (`read-model-unconsumed`) |
 | automation | the todo-list READMODEL before it, the AUTOMATION, its COMMAND, an EVENT | no todo list (`automation-without-todo-list`) |
 
-Also report a slice that holds more than one subject (`slice-mixed-shape`), an empty slice (`empty-slice`), a connection that runs right to left (`flow-backward`), two events in one column (`column-multiple-events`), a sheet that opens with an unmotivated command (`sheet-starts-with-command`) and a state change that follows another with no trigger in between (`state-change-without-trigger`).
+Run `check_model` once with `severity: "info"`: its default hides the info findings this analysis counts (`slice-without-scenario`, `no-error-scenario`, `todo-list-without-storyline`, `empty-slice`, `unsourced-fields`, the candidates). Also report a slice that holds more than one subject (`slice-mixed-shape`), an empty slice (`empty-slice`), a connection that runs right to left (`flow-backward`), two events in one column (`column-multiple-events`), a sheet that opens with an unmotivated command (`sheet-starts-with-command`) and a state change that follows another with no trigger in between (`state-change-without-trigger`).
 
 Do not report a gap that is plainly intentional: an internal slice with no screen, or the one blank creation form that may start a sheet. Use judgment; report only what looks unintentional given the slice's name. Say what you left out and why in one line if it is a close call.
 

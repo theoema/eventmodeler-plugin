@@ -18,7 +18,7 @@ It is not a step of its own. Use it wherever the people who know the business ar
 Ask only what the model does **not** already answer. A question about something the model states (a field, an event, a scenario) is noise. Before asking, read what is there:
 
 - `get_slice_view` for the slice: its fields, flows, scenarios and notes;
-- `check_model` for the holes it already knows: `unsourced-fields` and `untraceable-field` (a field with no known origin), `slice-without-scenario` and `no-error-scenario` (nothing says when a command is refused), `todo-list-without-storyline`;
+- `check_model` with `severity: "info"` (its default lists warnings and errors only) for the holes it already knows: `unsourced-fields` and `untraceable-field` (a field with no known origin), `slice-without-scenario` and `no-error-scenario` (nothing says when a command is refused), `todo-list-without-storyline`;
 - `list_pins` with `status: "waiting"`: a question already open on that area is not asked twice.
 
 Each question has a category, which decides what it asks about:

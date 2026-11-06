@@ -61,7 +61,7 @@ A trace is worth most for its breaks. Put each in the summary, plainly:
 - stored by an event but nothing ever reads it;
 - the same information held under two names with no mapping and no flow between them, so it enters twice;
 - an origin that is not marked (`isUserInput` or `isGenerated`) where the trace simply ends;
-- a value that is personal data in one place and unmarked in the next (`pii-mismatch`): run `check_model` for the sheets the trace crosses and quote any `untraceable-field`, `unsourced-fields` or `pii-mismatch` finding that falls on a stop.
+- a value that is personal data in one place and unmarked in the next (`pii-mismatch`): run `check_model` for the sheets the trace crosses (with `severity: "info"`, which `unsourced-fields` needs) and quote any `untraceable-field`, `unsourced-fields` or `pii-mismatch` finding that falls on a stop.
 
 Keep these as findings in your reply. Record them on the model only if the person asks: a note on the slice or cell (`set_note`, which replaces the text, so read it first), or a question for the human as a pin (`create_pin`).
 

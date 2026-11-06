@@ -57,10 +57,12 @@ Read in tiers, narrowest that answers the question.
 | Tool | Gives you |
 |---|---|
 | `list_models` | Models you can reach, with your role |
-| `get_model_view` | Orientation: sheets, slices (name, status, columns), counts |
-| `get_sheet_view` | One sheet's grid: element names and types per cell, flows, scenario titles. No fields, no scenario bodies. |
-| `get_slice_view` | One slice in working detail: elements with fields, cell notes, scenario bodies, flows with mappings, the slice's scenario coverage. Read this before editing a slice. |
+| `get_model_view` | Orientation: sheets with slice, element and scenario counts and canvas position, and contexts. Slices (name, status, columns) are listed for a model of up to 150 slices; above that pass `sheets: [names]` (or `slices: true` for all) or read `get_sheet_view`. |
+| `get_sheet_view` | One sheet's grid: element names and types per cell, flows, scenario titles. No fields, no scenario bodies; slice and lane notes are cut to a preview (`noteTruncated`), full text in `get_slice_view` / `get_cell_view`. |
+| `get_slice_view` | One slice in working detail: elements with fields, cell notes, scenario bodies, flows with mappings, the slice's scenario coverage. Each scenario body is listed once, in `scenarios` (its cell names it without the body). Read this before editing a slice. |
 | `trace_field` | One field followed through the model: `upstream` (where its value comes from, back to where it starts), `downstream` (everywhere it flows), `origins` (user input, generated, or `unsourced` — a gap). Across flows and sheets, by mapping or same-named field. |
+| `search_model` | Find text anywhere in the model, or on some `sheets`: names, field names, notes, scenario content, field examples, screen design text (narrow with `in`). Each match has its sheet, an address the other tools take, a snippet, and for a field its type, list flag and example. Linked copies give `originalAddress`. Use it instead of exporting the model to grep, for "where does this term appear" and "which elements have a field named X". |
+| `find_references` | Everything that points at one element: its linked copies and the original, flows on it and its copies, scenario steps that name it (on any sheet), and `removalImpact`, what `remove_target` would take with it. Read it before removing or retiring an element. |
 | `get_cell_view` | One cell (or one element) at full detail, plus its slice and lane notes |
 | `render_sheet` | A picture of the sheet (`cols: "A:D"` to crop wide sheets) |
 | `render_board` | A picture of several sheets: a `context`, some `sheets`, a `region` of the canvas, or the whole canvas, with titles at the size a zoom gives them. Check a layout with it. |
@@ -76,6 +78,7 @@ A linked copy shows the original's name and carries **no fields of its own**: re
 |---|---|
 | Create a model | `create_model` |
 | Create a sheet | `create_sheet` (goes under the existing sheets; `below` / `above` / `rightOf` / `leftOf` another sheet, optionally with a `gap`, to put it elsewhere) |
+| Rename a sheet | `rename_sheet` (`name`; refused if another sheet already has it) |
 | Arrange sheets on the canvas | `move_sheet` (`below` / `above` / `rightOf` / `leftOf` another sheet, optional `gap`; sheets in the way move along) |
 | Put sheets at exact positions | `place_sheets` (`placements: [{ sheet, x, y }]` in canvas units, from `get_layout`; refused, nothing moved, if a sheet would land on another) |
 | Lay out a context as rows of sheets | `layout_context` (`context` or a new `name`, `rows: [[sheet, …], …]`, optional `gapX` / `gapY` / `at`); its box is fitted with room for the titles |
@@ -88,8 +91,8 @@ A linked copy shows the original's name and carries **no fields of its own**: re
 | Reorder | `move_slice`, `move_column`, `move_lane` |
 | Add a lane | `insert_lane` (`kind`, `name`) |
 | Rename a lane / change its kind | `update_lane` (refused while the lane holds elements the new kind rejects) |
-| Remove an element, a row or a column | `remove_target` (cascades to flows, mappings, scenario entries) |
-| Delete a sheet | `delete_sheet` (reports the linked copies on other sheets that go with it) |
+| Remove an element, a row or a column | `remove_target` (cascades to flows, mappings, scenario entries); preview an element with `find_references`, a whole batch with `apply_operations` `dryRun: true` |
+| Delete a sheet | `delete_sheet` (reports the linked copies on other sheets that go with it, and `orphanedPins`: pins left with no sheet, to close or re-pin) |
 | Group sheets in a named box (a bounded context, a team's area) | `set_context` with `name` + `sheets`; pass `context` to rename it or re-fit it around other sheets. `delete_context` removes the box, never the sheets. `get_model_view` lists contexts and their sheets. Moving a sheet doesn't move its box: re-fit it (`layout_context` lays out and fits in one call). |
 
 One cell holds one element. To fit a second element on the same lane in the same slice, widen the slice first (`span_slice`, or `insert_slice` with `cols`). Never fight the grid by stacking.
@@ -97,10 +100,11 @@ One cell holds one element. To fit a second element on the same lane in the same
 ## Elements
 
 - `place_element`: `cell`, and `element` = `{ scope, name, fields? }` where `scope` is `command`, `event`, `readmodel`, `screen`, `processor`, `external-event` or `scenario`. For a screen also pass `design` (HTML) in the same call. Ids and geometry are generated: never pass them.
-- `update_element`: `element` address + `patch`. Merges by default (only the keys you pass change). A `fields` patch **replaces the whole field list**: send every field. Unchanged field names keep their ids, so mappings survive. To rename a field without losing mappings that point at it, send it with its existing `id` and the new `name`.
-- `move_element`: to another cell; keeps identity, flows and scenarios.
+- `update_element`: `element` address + `patch`. Merges by default (only the keys you pass change). To change fields without resending the list, put one of these in the patch (not together with `fields`, and not on a linked copy: edit its original): `addFields: [{...field}]` appends (refused if the name exists), `removeFields: ["name"]` removes (refused if it does not exist; `"parent.child"` for a `Custom` subfield), `updateFields: [{ name, newName?, ...changes }]` changes one field in place (`name` says which field, `newName` renames it, `null` clears a key; the field keeps its id, so mappings survive). A `fields` patch still **replaces the whole field list**: send every field. Unchanged field names keep their ids, so mappings survive. Removing a field, by any of these, also removes the flow mappings that point at it and the scenario values keyed by its name (steps of the element and of its linked copies); a rename carries those values to the new name. A field resent without its `id` under a new name counts as a removal plus an addition.
+- `move_element`: to another cell on the same sheet; keeps identity, flows and scenarios.
+- `move_elements`: elements to cells on another sheet (`fromSheet`, `toSheet`, `moves: [{element, to}]`), keeping ids, so linked copies, scenario steps on any sheet, fields and mappings keep working. Use it to split a sheet or move a slice to the sheet it belongs on; never rebuild elements and delete the originals (deleting an original deletes its copies). Move the whole connected group in one call, with its scenarios (they stack in the specification-lane cell and follow its slice). Flows between moved elements go with them. A flow to an element that stays behind is refused (nothing changes) unless you choose: `copies: [{element, to}]` puts a linked copy of the staying element on the new sheet and re-points the flow at it, or `leftBehind: "drop"` removes those flows. The reply lists the new addresses, `copies`, `repointedFlows`, `droppedFlows`, and `scenariosLeftBehind` (scenarios of a moved command or read model that did not come along). Create the destination columns and lanes first.
 - `copy_element`: a linked copy of a `command`, `event`, `readmodel`, `screen` or `external-event` in another cell. From another sheet: `fromSheet` names the original's sheet, `sheet` the copy's. A copy of a copy resolves to the original. Automations cannot be copied. Copy only what you then wire on this sheet; `check_model` reports a copy wired to nothing as `linked-copy-unwired`.
-- `remove_target`: removal. Removing an original removes its linked copies and the flows touching them; the reply's `removedCopies` names each one, with its sheet.
+- `remove_target`: removal. Removing an original removes its linked copies and the flows touching them, and strips every scenario step that names it, on any sheet; the reply's `removedCopies` names each copy, with its sheet. `find_references` shows all of that beforehand.
 - A list-shaped read model (a todo list, any query that returns rows) is marked by the node-level list flag, `isList: true` on the read model itself in `place_element` / `update_element`. It is not a field's `isList`. The views return it on the read model; a linked copy reports its original's, and takes it from there (set it on the original).
 
 ### Field shape
@@ -164,22 +168,25 @@ For a Given/When/Then scenario:
 
 ## Notes, questions, findings
 
-- `set_note`: free text on a **cell** (`B2`), a **column/slice** (`A` or slice name) or a **lane** (`2`). Never on an element. It **replaces** the existing note: read the note first (`get_cell_view`, `get_slice_view`) and write old plus new. Empty text clears. In a `notes` lane the cell note is the cell's content, written in markdown and shown in full on the canvas.
+- `set_note`: free text on a **cell** (`B2`), a **column/slice** (`A` or slice name) or a **lane** (`2`). Never on an element. It **replaces** the existing note; pass `append: true` to add the text as a new paragraph after the existing note instead (no note yet: it becomes the note). Empty text clears (with `append`, it changes nothing). In a `notes` lane the cell note is the cell's content, written in markdown and shown in full on the canvas.
 - `create_pin`: a question or open item for the human, anchored to what it is about: `regions`, each a `sheet` with `cells` (`B2`, `B2:D4`, `C`, `3`), or with neither for the whole sheet. Give several when the question spans them (the same step on two sheets). It waits on them until they reply. `list_pins` with `status: "waiting"` lists the questions still unanswered.
 - A pin a human leaves can cover several regions across sheets; `get_pin` returns each with its cells and one picture per sheet. Read all of them: together they are the context the note is about.
 - Pins a human leaves for you: `list_pins` → `get_pin` → `claim_pin` → do the work → `complete_pin`, or `reply_pin` to ask first.
+- `complete_pin` closes any pin that isn't done (open, working or waiting, yours included) with no claim needed. Its `reply` says what you did or where the answer came from ("answered in the thread: drop SNS", "moot: the sheet was replaced by …"). `claim_pin` also takes a waiting pin, for when the human answered you in your thread and work is left. `reply_pin` works on any pin: on a waiting pin it adds a message and keeps waiting, on a done pin it adds a correction and hands the pin back to the human.
+- Before you finish, close every pin your work answered: the ones waiting on the human too, and your own questions the human answered in the thread. Don't leave them for him to close. `list_pins` with `status: "waiting"` or `"all"` shows them.
+- `list_pins` and `get_pin` describe what a pin covers as cell ranges (`A1:T3`), long lists cut with "and N more"; `get_pin` has the per-cell coverage.
 
 Use a note for something decided or observed. Use a pin for something that needs an answer.
 
 ## Screens
 
-`place_element` with `design`, or `set_screen_design` afterwards: sanitized HTML and CSS (no scripts or handlers). `set_screen_theme` sets the model-wide look once, so each screen stays a few lines of semantic markup. Check with `render_screen`.
+`place_element` with `design`, or `set_screen_design` afterwards: sanitized HTML and CSS (no scripts or handlers). `set_screen_theme` sets the model-wide look once, so each screen stays a few lines of semantic markup. Check with `render_screen`. `get_screen_design` returns the HTML and marks without the model theme CSS; pass `theme: true` when you need it.
 
 Marks call out one part of a design: put `data-em-mark-id="<id>"` on the element and pass `marks: [{ id, color?, blurOutside?, whiteOutside? }]` with the design. The element is outlined (default red `#e74c3c`); `blurOutside` blurs the rest of the page, `whiteOutside` whites it out. They show on the canvas, in `render_screen`/`render_sheet`/`get_pin` pictures, and in board files. `set_screen_design` without `marks` keeps the marks whose element is still in the new HTML; `marks: []` clears them. A linked screen copy shows its original's design and marks; for the same page with another part marked, place a plain screen of the same name.
 
 ## Validation
 
-`check_model` (optionally one `sheet`) runs the mechanical checks and returns findings, errors first, each with a severity, a stable `check` code, the sheet, a target (an element address, a slice name or `column C`) and a message naming the cells to look at. It does not judge anything: a clean result means the structure is sound, not that the model is right. Run it before any hand-rolled checking, then apply the rules by reading the slices.
+`check_model` (optionally one `sheet`) runs the mechanical checks and returns findings, errors first. It lists errors and warnings by default: pass `severity: "info"` to list the info findings too (several checks below are info, so a review, an analysis or a coverage pass needs it), and `checks: [codes]` to list only some codes. `counts` always counts every finding, and `hidden` says how many were left out. At most 60 findings are listed (`limit` changes it); when more are kept, `byCheck` counts them per code, so narrow with `sheet` or `checks`. Each finding has a severity, a stable `check` code, the sheet, a target (an element address, a slice name or `column C`) and a message naming the cells to look at. It does not judge anything: a clean result means the structure is sound, not that the model is right. Run it before any hand-rolled checking, then apply the rules by reading the slices.
 
 | Area | Codes (severity) |
 |---|---|
@@ -188,14 +195,14 @@ Marks call out one part of a design: put `data-em-mark-id="<id>"` on the element
 | Slices | `slice-mixed-shape` (error), `empty-slice` (info) |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` (warnings) |
 | Field sources | `untraceable-field` (warning), `unsourced-fields` (info), `pii-mismatch` (warning: a flow carries a value from a PII-marked field into an unmarked one, or the reverse) |
-| Scenarios | `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy`, `scenario-without-examples`, `storyline-shape` (warnings), `slice-without-scenario`, `no-error-scenario`, `todo-list-without-storyline` (info), `scenario-missing-ref` (error) |
+| Scenarios | `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy`, `scenario-without-examples`, `storyline-shape` (warnings), `slice-without-scenario`, `no-error-scenario`, `todo-list-without-storyline` (info), `scenario-missing-ref` (error), `scenario-stale-value` (warning: a step or its rows hold values for a field the element no longer has) |
 | Candidates, worth a look | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (info) |
 
 Linked copies resolve to their originals throughout: a flow landing on a copy credits the original, a screen and its copy are one issuer, and a copy implies no slice shape of its own.
 
 ## Replies
 
-A write answers with what it did plus the sheet's grid **outline**: column letter → slice, row number → lane. That is enough to re-address after columns or rows shift. For contents, read `get_sheet_view` / `get_slice_view` again.
+A write answers with what it did plus the sheet's grid **outline**: column letter → slice, row number → lane. An element write (`place_element`, `update_element`, `move_element`, `copy_element`, `set_scenario`) also returns the touched `cell`, with scenario elements listed without their bodies (`set_scenario` returns the one it wrote in full as `scenario`). That is enough to re-address after columns or rows shift. For contents, read `get_sheet_view` / `get_slice_view` again.
 
 A parameter or key a tool doesn't take fails the call (nothing changes) and the error lists what it does take. If the instructions or a skill name a parameter the tool refuses, the session's tool list predates the server: ask the user to reconnect the EventModeler MCP server, then retry.
 
@@ -205,8 +212,8 @@ People and other agents edit the same model live.
 
 - `claim_pin` answers with `alsoInProgress`: the other pins agents are working on, and their sheets. Stay off those sheets where you can. Never delete an original that another sheet copies from without asking (`create_pin` or `reply_pin`): its copies go with it.
 - Before re-adding something that isn't there, read `get_history` for that sheet: a person may have removed it on purpose. Ask rather than restore it.
-- A pin region with `sheetDeleted` points at a sheet that is gone. Read `get_history`, and ask the human if the note no longer makes sense.
+- A pin region with `sheetDeleted` points at a sheet that is gone. Read `get_history`, and ask the human if the note no longer makes sense. `delete_sheet` lists the pins it leaves without any sheet in `orphanedPins`: close them with `complete_pin` (moot, and why) or re-pin them on the replacement, in the same turn.
 
 ## Batching
 
-Prefer the granular tools: one `place_element`, one `create_flow` at a time, in story order, left to right. Use `apply_operations` only for a unit that must land all-or-nothing (a failure applies nothing; resend the whole batch). A step for a tool that takes no arguments may omit `args`. `build_sheet_from_spec` creates a whole sheet from one spec, all-or-nothing; reach for it only to scaffold a sheet whose shape is already settled. A screen in a spec takes `design` as HTML, as `place_element` does.
+Prefer the granular tools: one `place_element`, one `create_flow` at a time, in story order, left to right. Use `apply_operations` only for a unit that must land all-or-nothing (a failure applies nothing; resend the whole batch). Pass `dryRun: true` to preview a batch: it runs, answers with every result (or the operation that would fail) and is rolled back. Use it before a removal or restructure whose cascade you are unsure of. A step for a tool that takes no arguments may omit `args`. `build_sheet_from_spec` creates a whole sheet from one spec, all-or-nothing; reach for it only to scaffold a sheet whose shape is already settled. A screen in a spec takes `design` as HTML, as `place_element` does.

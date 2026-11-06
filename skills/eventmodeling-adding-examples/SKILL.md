@@ -58,7 +58,7 @@ Domain-specific, not generic: for "Order Placed" use order values; for "Customer
 
 ### Step 3 — Write them
 
-`example` is a string. In `update_element` a `fields` patch **replaces the whole field list**: send every field of the element, with its existing `id`, `name` and flags, changing only `example` where you fill it. A field with a good example comes back untouched. One `update_element` per element; use one `apply_operations` batch when several elements should land together.
+`example` is a string. In `update_element` use `updateFields: [{ name, example }]` to fill examples without resending the other fields (a `fields` patch would replace the whole list). A field with a good example comes back untouched. One `update_element` per element; use one `apply_operations` batch when several elements should land together.
 
 ### Step 4 — Report
 
@@ -101,4 +101,4 @@ A list read model's outcome is its `rows` or `expectEmptyList`, on the scenario;
 - [ ] Existing examples were kept; contradictions were reported, not overwritten
 - [ ] Calculated values agree with their inputs
 - [ ] No real person's data in any `isPii` field
-- [ ] Every `fields` patch carried the element's whole field list; linked copies were left alone
+- [ ] Examples went in with `updateFields` (or a `fields` patch carrying the element's whole list); linked copies were left alone

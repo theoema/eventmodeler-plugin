@@ -59,11 +59,11 @@ The full set it reports:
 | Read models | `read-model-without-source`, `read-model-unconsumed` |
 | Naming | `event-name-not-past-tense`, `command-name-past-tense` |
 | Field sources | `untraceable-field`, `unsourced-fields`, `pii-mismatch` |
-| Scenarios | `slice-without-scenario`, `no-error-scenario`, `scenario-missing-ref`, `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy`, `scenario-without-examples`, `storyline-shape`, `todo-list-without-storyline` |
+| Scenarios | `slice-without-scenario`, `no-error-scenario`, `scenario-missing-ref`, `scenario-stale-value`, `scenario-when-shape`, `scenario-then-shape`, `scenario-on-linked-copy`, `scenario-without-examples`, `storyline-shape`, `todo-list-without-storyline` |
 | Slices | `empty-slice`, `slice-mixed-shape` |
 | Candidates, worth a look rather than violations | `command-fan-out`, `read-model-fan-in`, `slice-scenario-outlier` (info) |
 
-Errors are the method's hard rules (one issuer per command, flows that read forward, one event per column, one subject per slice, a todo list per automation); warnings are almost certainly a mistake; info is a prompt to look. Linked copies resolve to their originals, so a copy is never reported as a duplicate, a second issuer or a slice of its own.
+Errors are the method's hard rules (one issuer per command, flows that read forward, one event per column, one subject per slice, a todo list per automation); warnings are almost certainly a mistake; info is a prompt to look. `check_model` lists warnings and errors by default: pass `severity: "info"` to list the info findings too (`counts` always counts them), and `checks: [codes]` to list only some codes. Linked copies resolve to their originals, so a copy is never reported as a duplicate, a second issuer or a slice of its own.
 
 Not checked by `check_model`; do these by hand from `get_sheet_view`: a command named like a query (`Load Orders`) and an event named for the UI, machinery or a calculation (`Button Clicked`, `Total Calculated`), a generic "User" actor lane, same-named elements that are not linked copies (except screens: same-named screens are the instances of one page, Step 5c of `eventmodeling-identifying-outputs`, so judge them by whether each marks a different component), a read model with no view scenario, whether a scenario's example values make business sense and the slice it sits in, and slice names and statuses. An event with no producing command (`event-without-command`) is expected when it is another system's fact in a second swimlane lane, so judge it by its lane.
 

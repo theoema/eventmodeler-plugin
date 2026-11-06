@@ -28,7 +28,7 @@ This is **Step 4b**. It runs immediately after `eventmodeling-identifying-inputs
 - `Customer Registered` **opens** a row (a notification now needs sending).
 - `Notification Sent` (the event this automation's own resulting command produces) **closes** that row (removes it — the list only ever shows outstanding work).
 - The automation (`Send Welcome Notification`) reads `Notifications To Send`, and for every open row issues `Send Notification`.
-- In Step 7 that open → close lifecycle is specified as one storyline on the todo list (empty → `Customer Registered` → its row → `Notification Sent` → empty), see `eventmodeling-elaborating-scenarios`; `check_model` reports a todo list without one as `todo-list-without-storyline`.
+- In Step 7 that open → close lifecycle is specified as one storyline on the todo list (empty → `Customer Registered` → its row → `Notification Sent` → empty), see `eventmodeling-elaborating-scenarios`; `check_model` (with `severity: "info"`) reports a todo list without one as `todo-list-without-storyline`.
 
 Even an automation that looks like a "pure signal relay" still has a todo list — model it anyway: it documents that the automation is idempotent/complete once its own event fires, and keeps every automation consistent with the same `READMODEL → AUTOMATION → COMMAND → EVENT` pattern instead of silently exempting some as "too simple to need one."
 

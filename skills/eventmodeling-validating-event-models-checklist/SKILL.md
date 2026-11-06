@@ -43,7 +43,7 @@ Slice names come from `get_model_view`.
 
 An entity's timeline in this checklist is its own event stream: the events in one swimlane lane (the lane named for the entity).
 
-Also run `check_model` once per sheet up front (or for the whole model) — several checklist items (Command With Multiple Issuers in Phase 1: `command-multiple-issuers`, backward-arrow / event-flow in Phase 6: `flow-backward`, read-model-source distinctions in Phase 3: `read-model-without-source`) have a purely structural half the tool answers directly, so start each of those from its `findings` and spend the manual effort on the semantic judgement the tool can't make. A row with no code in the table below is all by hand.
+Also run `check_model` with `severity: "info"` once per sheet up front (or for the whole model; the default lists only warnings and errors, and several codes below are info) — several checklist items (Command With Multiple Issuers in Phase 1: `command-multiple-issuers`, backward-arrow / event-flow in Phase 6: `flow-backward`, read-model-source distinctions in Phase 3: `read-model-without-source`) have a purely structural half the tool answers directly, so start each of those from its `findings` and spend the manual effort on the semantic judgement the tool can't make. A row with no code in the table below is all by hand.
 
 ## What `check_model` Covers
 

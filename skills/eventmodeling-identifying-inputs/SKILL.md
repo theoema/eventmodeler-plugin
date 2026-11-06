@@ -148,7 +148,7 @@ place_element {
   "element": { "scope": "command", "name": "Reserve Bike", "fields": [ ... ] }
 }
 ```
-A cell holds one element, so an occupied cell is refused (`CELL_OCCUPIED`): widen the slice first (`span_slice`, or `insert_slice` with `cols`). If the sheet has no interaction lane yet, add one between the actor lanes and the event lane (`insert_lane` with kind `interaction`). Placing a command creates no flows; wiring comes next. Pass the `fields` in the same call when the attributes are already known; otherwise follow up with `update_element` and a `fields` patch, which replaces the whole list (send every field; unchanged names keep their ids, so mappings survive).
+A cell holds one element, so an occupied cell is refused (`CELL_OCCUPIED`): widen the slice first (`span_slice`, or `insert_slice` with `cols`). If the sheet has no interaction lane yet, add one between the actor lanes and the event lane (`insert_lane` with kind `interaction`). Placing a command creates no flows; wiring comes next. Pass the `fields` in the same call when the attributes are already known; otherwise follow up with `update_element` and `addFields` (one edit at a time; a `fields` patch replaces the whole list).
 
 ### Preventing backward arrows (mandatory pre-placement check)
 
