@@ -29,6 +29,7 @@ Every tool except `list_models` takes `modelId` (from `list_models`). Tools that
 | Open question for the human | `create_pin` |
 | Validate | `check_model` |
 | Look at the board | `get_model_view`, `get_sheet_view`, `get_slice_view`, `get_cell_view`, `render_sheet`, `render_board` |
+| Show the user part of the board, or what changed | `show_elements` |
 | Screen mockup | `place_element` with `design`, or `set_screen_design` |
 | Call out part of a screen | `marks` on `place_element` / `set_screen_design` |
 
@@ -68,6 +69,7 @@ Read in tiers, narrowest that answers the question.
 | `render_board` | A picture of several sheets: a `context`, some `sheets`, a `region` of the canvas, or the whole canvas, with titles at the size a zoom gives them. Check a layout with it. |
 | `get_layout` | Where every sheet and context sits: x, y, width, height in canvas units, each title's box, and the titles that collide (`crowdedTitles`) |
 | `render_screen` | One screen's HTML design as an image |
+| `show_elements` | Shows the user elements, a slice, a scenario or a sheet in the chat, drawn as the board draws it. `since` (`{seq}` from `get_history`, or `{at}`) adds Before and After with created, changed and removed marked; without `elements` it shows everything that changed. For the user; `render_sheet` is for checking your own work. |
 | `get_history` / `revert_model` | What changed, and rewinding. Every removal is recoverable. |
 
 A linked copy shows the original's name and carries **no fields of its own**: read fields from the original (`originalStickyId`).
